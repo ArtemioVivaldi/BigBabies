@@ -99,17 +99,34 @@ def make_analytics(data: dict, year: int, summary: dict) -> dict | None:
             "statuses": [{"status": k, "count": v} for k, v in statuses.items()]}
 
 
+def make_timeline(data: dict) -> dict | None:
+    """Витрати по місяцях за ВЕСЬ час: для кожного місяця — сума і суми окремих закупівель."""
+    done = [t for t in data["tenders"] if t["status"] == "complete" and t["year"] and t["month"]]
+    if not done:
+        return None
+    by_month = {}
+    for t in done:
+        by_month.setdefault((t["year"], t["month"]), []).append(round(t["amount"], 2))
+    first, last = min(by_month), max(by_month)
+    months, (y, m) = [], first
+    while (y, m) <= last:  # без пропусків: місяці без закупівель мають 0
+        amounts = sorted(by_month.get((y, m), []), reverse=True)
+        months.append({"y": y, "m": m, "amount": round(sum(amounts), 2), "tenders": amounts})
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+    return {"months": months}
+
+
 def api_summary(edrpou: str, year: str | None) -> dict:
     """Усе, що потрібно сторінці для однієї установи й року."""
     data = get_tenders(edrpou)
     years = available_years(data["tenders"])
     if not years:
-        return {"years": [], "summary": None, "story": "", "heatmap": [], "analytics": None}
+        return {"years": [], "summary": None, "story": "", "heatmap": [], "analytics": None, "timeline": None}
     chosen = int(year) if year else years[0]
     summary = build_summary(data, chosen)
     story = write_story(summary) if summary["facts"] else ""
     return {"years": years, "summary": summary, "story": story, "heatmap": make_heatmap(data, chosen),
-            "analytics": make_analytics(data, chosen, summary)}
+            "analytics": make_analytics(data, chosen, summary), "timeline": make_timeline(data)}
 
 
 class Handler(SimpleHTTPRequestHandler):
