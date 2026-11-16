@@ -291,5 +291,14 @@ show_heatmap(data, year)
 show_top_purchases(summary)
 
 st.divider()
-st.caption("Джерело: Prozorro (prozorro.gov.ua). Суми — очікувана вартість завершених закупівель; "
-           "фактичні суми договорів можуть дещо відрізнятися.")
+st.markdown(
+    "<style>.footer {background: #050505; color: #F5E2C5; border-radius: 14px; padding: 2rem 2.5rem 1rem;"
+    " margin-top: 1rem;} .footer-note {color: #DDD7A3; font-size: 0.85rem; max-width: 46rem;}"
+    " .footer-word {font-family: Georgia, serif; font-size: clamp(2.5rem, 9vw, 7rem); line-height: 1;"
+    " margin-top: 1.5rem; white-space: nowrap; overflow: hidden;}</style>"
+    '<div class="footer"><div class="footer-note">Джерело: '
+    '<a href="https://prozorro.gov.ua" style="color:#C0B623">Prozorro</a>. Суми — очікувана вартість '
+    "завершених закупівель; фактичні суми договорів можуть дещо відрізнятися.</div>"
+    '<div class="footer-word">Гроші моєї школи</div></div>',
+    unsafe_allow_html=True,
+)
