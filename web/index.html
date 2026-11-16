@@ -4,58 +4,115 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Куди пішли гроші вашої установи</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap&subset=cyrillic">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main>
-    <!-- Кожен «поверх» (.floor) — окрема картка; під час прокрутки наступна наїжджає на попередню -->
-    <section class="floor dark hero">
-      <span class="pill light">Відкриті дані Prozorro</span>
-      <h1>Куди пішли гроші<br>вашої установи</h1>
-      <p>Підсумки року для бюджету будь-якої установи — простою мовою, з графіками й історією від штучного інтелекту.</p>
-    </section>
-
-    <section class="floor search-floor">
-      <label for="q">Назва установи: школа, садочок, лікарня, міська рада…</label>
-      <input id="q" type="text" autocomplete="off" placeholder="Почніть вводити назву, наприклад «школа радості»">
-      <ul id="suggestions" hidden></ul>
-      <div id="message" class="message">Введіть хоча б 3 літери назви й оберіть установу зі списку.</div>
-    </section>
-
-    <!-- display: contents — щоб поверхи результату були сусідами решти поверхів -->
-    <div id="result" hidden>
-      <section class="floor header-floor">
-        <div class="header-row">
-          <h2 id="school-name"></h2>
-          <div id="years"></div>
-        </div>
-        <div id="pills"></div>
-      </section>
-
-      <section class="floor green"><div class="numbers" id="numbers"></div></section>
-      <section class="floor sand"><div class="story" id="story"></div></section>
-
-      <section class="floor">
-        <div class="grid">
-          <div><h3>На що пішли гроші</h3><div id="chart-categories"></div></div>
-          <div><h3>Скільки по місяцях</h3><div id="chart-months"></div></div>
-        </div>
-      </section>
-
-      <section class="floor dark">
-        <h3>Коли і на що йшли гроші</h3><div id="chart-heatmap"></div>
-        <p class="source">Чим темніший квадрат, тим більше грошей.</p>
-      </section>
-
-      <section class="floor"><h3>Топ-5 найбільших покупок</h3><div id="top5"></div></section>
+  <!-- Прозора темна шапка, як на головній сторінці сайту продажів -->
+  <header class="header">
+    <div class="header-inner">
+      <a class="logo" href="#top"><span class="logo-box">₴</span><span class="logo-text">Гроші моєї громади</span></a>
+      <nav class="nav">
+        <a class="nav-link" href="#search">Пошук</a>
+        <a class="nav-link nav-result" href="#numbers" hidden>Підсумки</a>
+        <a class="nav-link nav-result" href="#charts" hidden>Графіки</a>
+        <a class="nav-link nav-result" href="#heatmap" hidden>Теплова карта</a>
+        <a class="nav-link nav-result" href="#top5" hidden>Покупки</a>
+      </nav>
+      <div class="header-actions">
+        <button class="icon-btn" id="theme-toggle" type="button" aria-label="Змінити тему">◐</button>
+        <a class="btn btn-accent btn-sm" href="#search" id="cta-nav">Знайти установу</a>
+      </div>
     </div>
+  </header>
 
-    <footer class="floor dark">
-      <p>Джерело: <a href="https://prozorro.gov.ua">Prozorro</a>. Суми — очікувана вартість завершених закупівель;
-      фактичні суми договорів можуть дещо відрізнятися.</p>
-      <div class="wordmark">Гроші моєї громади</div>
-    </footer>
+  <main id="top">
+    <!-- Повноекранний hero: заголовок по центру внизу і дві кнопки-пілюлі -->
+    <section class="screen hero">
+      <div class="screen-bg"></div>
+      <div class="screen-content">
+        <h1 class="screen-title reveal">Куди пішли гроші<br>вашої установи</h1>
+        <p class="screen-text reveal">Підсумки року для бюджету будь-якої школи, садочка чи лікарні — простою мовою, на відкритих даних Prozorro.</p>
+        <div class="btn-row reveal">
+          <a class="btn btn-accent" href="#search" id="cta-hero">Знайти установу</a>
+          <a class="btn btn-outline" href="#about">Як це працює</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="about">
+      <div class="container narrow">
+        <h2 class="reveal">Як це працює</h2>
+        <div class="steps">
+          <div class="step reveal"><b>1</b><p>Введіть назву установи — школи, садочка, лікарні чи міської ради.</p></div>
+          <div class="step reveal"><b>2</b><p>Ми беремо її закупівлі з відкритої системи Prozorro й самі все рахуємо.</p></div>
+          <div class="step reveal"><b>3</b><p>Штучний інтелект переказує готові цифри людською мовою. Вигадати суми він не може.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt screen-section" id="search">
+      <div class="container narrow">
+        <h2 class="reveal">Знайдіть свою установу</h2>
+        <div class="search reveal">
+          <input id="q" type="text" autocomplete="off" aria-label="Назва установи"
+                 placeholder="Почніть вводити назву, наприклад «школа радості»">
+          <ul id="suggestions" hidden></ul>
+        </div>
+        <div id="message" class="message">Введіть хоча б 3 літери назви й оберіть установу зі списку.</div>
+      </div>
+    </section>
+
+    <!-- Результат з'являється після вибору установи -->
+    <div id="result" hidden>
+      <section class="section screen-section" id="numbers">
+        <div class="container center">
+          <div id="pills" class="reveal"></div>
+          <h2 id="school-name" class="big-title reveal"></h2>
+          <div id="years" class="reveal"></div>
+          <div class="numbers" id="numbers-grid"></div>
+        </div>
+      </section>
+
+      <section class="section section-alt" id="story">
+        <div class="container narrow"><div class="story reveal" id="story-text"></div></div>
+      </section>
+
+      <section class="section" id="charts">
+        <div class="container">
+          <div class="grid">
+            <div class="reveal"><h3>На що пішли гроші</h3><div id="chart-categories"></div></div>
+            <div class="reveal"><h3>Скільки по місяцях</h3><div id="chart-months"></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-alt" id="heatmap">
+        <div class="container">
+          <h3 class="reveal">Коли і на що йшли гроші</h3>
+          <div id="chart-heatmap" class="reveal"></div>
+          <p class="source reveal">Чим насиченіший квадрат, тим більше грошей.</p>
+        </div>
+      </section>
+
+      <section class="section" id="top5">
+        <div class="container"><h3 class="reveal">Топ-5 найбільших покупок</h3><div id="top5-table" class="reveal"></div></div>
+      </section>
+    </div>
   </main>
+
+  <!-- Багатоколонковий підвал -->
+  <footer class="footer">
+    <div class="container footer-grid">
+      <div><div class="logo"><span class="logo-box">₴</span> Гроші моєї громади</div>
+        <p class="muted">Підсумки року для бюджету будь-якої установи — простою мовою.</p></div>
+      <div><h4>Сторінка</h4><a href="#about">Як це працює</a><a href="#search">Пошук</a></div>
+      <div><h4>Дані</h4><a href="https://prozorro.gov.ua" target="_blank" rel="noopener">Prozorro</a>
+        <span class="muted">Суми — очікувана вартість завершених закупівель.</span></div>
+      <div><h4>Команда</h4><span class="muted">BigBabies · хакатон з основ програмування, тема OpenData</span></div>
+    </div>
+  </footer>
   <script src="app.js"></script>
 </body>
 </html>
