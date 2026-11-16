@@ -99,15 +99,19 @@ function render(data) {
   if (!has) return;
 
   $("numbers").innerHTML =
-    number("Витрачено за рік", money(s.total_amount), "завершені закупівлі") +
-    number("Закупівель", s.tenders_count, "окремих покупок за рік") +
-    number("Щодня", money(s.facts.per_day), "у середньому за 365 днів");
+    number("Витрачено за рік", count(s.total_amount, " грн"), "завершені закупівлі") +
+    number("Закупівель", count(s.tenders_count, ""), "окремих покупок за рік") +
+    number("Щодня", count(s.facts.per_day, " грн"), "у середньому за 365 днів");
   $("story").innerHTML = markdown(data.story);
   $("chart-categories").innerHTML = barChart(s.by_category);
   $("chart-months").innerHTML = lineChart(s.by_month, s.facts.busiest_month.month);
   $("chart-heatmap").innerHTML = heatmap(data.heatmap);
   $("top5").innerHTML = topTable(s.top_purchases);
+  armAnimations();
 }
+
+// Число, яке під час появи «набігає» від 0 (див. armAnimations)
+const count = (value, suffix) => `<span class="count" data-to="${value}" data-suffix="${suffix}">0${suffix}</span>`;
 
 const number = (label, value, note) =>
   `<div class="num"><div class="num-label">${label}</div><div class="num-value">${value}</div><div class="num-note">${note}</div></div>`;
@@ -130,8 +134,8 @@ function barChart(rows) {
     const y = i * rowH + 4, w = ((W - left - 70) * r.amount) / max;
     const color = COLORS[CATEGORIES.indexOf(r.category)] || COLORS[6];
     svg += `<text x="${left - 8}" y="${y + 19}" text-anchor="end" font-size="12">${esc(r.category)}</text>`;
-    svg += `<rect x="${left}" y="${y}" width="${w}" height="26" rx="3" fill="${color}"><title>${money(r.amount)}</title></rect>`;
-    svg += `<text x="${left + w + 6}" y="${y + 18}" font-size="12">${Math.round(r.share * 100)}%</text>`;
+    svg += `<rect class="bar" style="--d:${i * 120}ms" x="${left}" y="${y}" width="${w}" height="26" rx="3" fill="${color}"><title>${money(r.amount)}</title></rect>`;
+    svg += `<text class="fade" style="--d:${600 + i * 120}ms" x="${left + w + 6}" y="${y + 18}" font-size="12">${Math.round(r.share * 100)}%</text>`;
   });
   return svg + "</svg>";
 }
@@ -145,14 +149,15 @@ function lineChart(months, peak) {
     svg += `<line x1="${l}" x2="${W - r}" y1="${y(v)}" y2="${y(v)}" stroke="#00000022"/>` +
            `<text x="${l - 6}" y="${y(v) + 4}" text-anchor="end" font-size="11">${(v / 1e6).toFixed(1)} млн</text>`;
   }
-  svg += `<rect x="${x(peak - 1) - 14}" y="${t}" width="28" height="${H - t - b}" fill="#C0B623" opacity="0.35"/>`;  // смуга піку
-  svg += `<polyline fill="none" stroke="#2F752C" stroke-width="2" points="${months.map((m, i) => x(i) + "," + y(m.amount)).join(" ")}"/>`;
+  svg += `<rect class="fade" style="--d:1200ms" x="${x(peak - 1) - 14}" y="${t}" width="28" height="${H - t - b}" fill="#C0B623" opacity="0.35"/>`;  // смуга піку
+  svg += `<polyline class="line" pathLength="1" fill="none" stroke="#2F752C" stroke-width="2" points="${months.map((m, i) => x(i) + "," + y(m.amount)).join(" ")}"/>`;
   months.forEach((m, i) => {
-    svg += `<circle cx="${x(i)}" cy="${y(m.amount)}" r="3.5" fill="#2F752C"><title>${MONTHS[i]}: ${money(m.amount)}</title></circle>`;
+    svg += `<circle class="fade" style="--d:${400 + i * 110}ms" cx="${x(i)}" cy="${y(m.amount)}" r="3.5" fill="#2F752C"><title>${MONTHS[i]}: ${money(m.amount)}</title></circle>`;
     svg += `<text x="${x(i)}" y="${H - 10}" text-anchor="middle" font-size="11">${MONTHS[i]}</text>`;
   });
   const p = months[peak - 1];
-  svg += `<text x="${x(peak - 1)}" y="${y(p.amount) - 10}" text-anchor="middle" font-size="12" font-weight="bold">${money(p.amount)}</text>`;
+  const left = peak <= 2;  // біля лівого краю підпис ставимо праворуч від точки, щоб не налазив на вісь
+  svg += `<text class="fade" style="--d:1500ms" x="${x(peak - 1) + (left ? 12 : 0)}" y="${y(p.amount) + (left ? 4 : -10)}" text-anchor="${left ? "start" : "middle"}" font-size="12" font-weight="bold">${money(p.amount)}</text>`;
   return svg + "</svg>";
 }
 
@@ -164,11 +169,11 @@ function heatmap(cells) {
   let svg = `<svg viewBox="0 0 ${W} ${H}">`;
   CATEGORIES.forEach((c, i) => { svg += `<text x="${left - 8}" y="${i * ch + 22}" text-anchor="end" font-size="13">${esc(c)}</text>`; });
   MONTHS.forEach((m, j) => { svg += `<text x="${left + j * cw + cw / 2}" y="${H - 8}" text-anchor="middle" font-size="12">${m}</text>`; });
-  for (const c of cells) {
+  cells.forEach((c, n) => {
     const i = CATEGORIES.indexOf(c.category), j = c.month - 1;
-    svg += `<rect x="${left + j * cw + 1}" y="${i * ch + 2}" width="${cw - 2}" height="${ch - 4}" rx="3" fill="${shade(c.amount)}">` +
+    svg += `<rect class="cell" style="--d:${j * 60 + i * 40}ms" x="${left + j * cw + 1}" y="${i * ch + 2}" width="${cw - 2}" height="${ch - 4}" rx="3" fill="${shade(c.amount)}">` +
            `<title>${c.category}, ${MONTHS[j]}: ${money(c.amount)}</title></rect>`;
-  }
+  });
   return svg + "</svg>";
 }
 
@@ -214,3 +219,43 @@ window.addEventListener("scroll", updateStack, { passive: true });
 window.addEventListener("resize", placeFloors);
 new ResizeObserver(placeFloors).observe(document.body);  // розміри змінюються, коли з'являються дані
 placeFloors();
+
+
+// ---------- Анімації появи ----------
+
+if (!reduceMotion) document.documentElement.classList.add("anim");
+let appearObserver = null;
+
+// Елементи, що з'являються по черзі (fade-up) всередині поверху
+const REVEAL = ".num, .story > *, h3, #pills, .source, table, .header-row";
+
+function armAnimations() {
+  if (reduceMotion) return;
+  appearObserver && appearObserver.disconnect();
+  appearObserver = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      entry.target.classList.add("in");
+      runCounters(entry.target);
+      appearObserver.unobserve(entry.target);
+    }
+  }, { threshold: 0.2 });
+
+  for (const floor of document.querySelectorAll("#result .floor")) {
+    floor.classList.remove("in");
+    floor.querySelectorAll(REVEAL).forEach((el, i) => { el.dataset.reveal = ""; el.style.setProperty("--i", i); });
+    appearObserver.observe(floor);
+  }
+}
+
+function runCounters(root) {
+  root.querySelectorAll(".count").forEach((el) => {
+    const to = Number(el.dataset.to), suffix = el.dataset.suffix, start = performance.now(), dur = 1400;
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / dur), eased = 1 - Math.pow(1 - t, 3);
+      el.textContent = Math.round(to * eased).toLocaleString("uk-UA").replace(/\u00a0/g, " ") + suffix;
+      if (t < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+}
