@@ -10,7 +10,7 @@ import pandas as pd  # ставиться разом зі streamlit
 import streamlit as st
 from streamlit_searchbox import st_searchbox  # поле з підказками під час введення
 
-from analysis import available_years, build_summary
+from analysis import CATEGORIES, available_years, build_summary, categorize
 from data_loader import get_tenders, search_schools
 
 try:
@@ -136,6 +136,35 @@ def show_charts(summary: dict) -> None:
         source_note("сума закупівель за місяцями")
 
 
+def show_heatmap(data: dict, year: int) -> None:
+    """Теплова карта: скільки грошей пішло на кожну категорію в кожному місяці."""
+    rows = []
+    for tender in data["tenders"]:
+        if tender["year"] == year and tender["status"] == "complete":
+            rows.append({"category": categorize(tender), "month": tender["month"],
+                         "amount": tender["amount"]})
+    table = pd.DataFrame(rows).groupby(["category", "month"], as_index=False)["amount"].sum()
+    table["Місяць"] = [MONTHS[m - 1] for m in table["month"]]
+
+    st.subheader("Коли і на що йшли гроші")
+    st.vega_lite_chart(table, {
+        "height": 300,
+        "mark": {"type": "rect", "stroke": CREAM, "strokeWidth": 2},
+        "encoding": {
+            "x": {"field": "Місяць", "type": "ordinal", "title": None,
+                  "sort": MONTHS, "scale": {"domain": MONTHS}, "axis": {"labelAngle": 0}},
+            "y": {"field": "category", "type": "nominal", "title": None,
+                  "sort": CATEGORIES, "scale": {"domain": CATEGORIES}, "axis": {"labelLimit": 220}},
+            "color": {"field": "amount", "type": "quantitative", "legend": None,
+                      "scale": {"range": ["#EDE3B8", "#C0B623", "#619206", "#2F752C"]}},
+            "tooltip": [{"field": "category", "title": "Категорія"},
+                        {"field": "Місяць"},
+                        {"field": "amount", "title": "Сума, грн", "format": ",.0f"}],
+        },
+    })
+    source_note("чим темніший квадрат, тим більше грошей; порожньо — закупівель не було")
+
+
 def show_top_purchases(summary: dict) -> None:
     """Таблиця «Топ-5 покупок» з посиланнями на Prozorro."""
     st.subheader("Топ-5 найбільших покупок")
@@ -244,6 +273,7 @@ st.markdown(cached_story(summary))
 
 st.divider()
 show_charts(summary)
+show_heatmap(data, year)
 show_top_purchases(summary)
 
 st.divider()
