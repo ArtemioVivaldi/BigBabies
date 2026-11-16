@@ -46,7 +46,7 @@ def template_story(summary: dict) -> str:
 
     return (
         f"## 🎒 {summary['year']} рік: {name}\n\n"
-        f"За {summary['year']} рік установа провела **{summary['tenders_count']} закупівель** "
+        f"За {summary['year']} рік установа здійснила закупівель: **{summary['tenders_count']}** "
         f"на загальну суму **{_money(summary['total_amount'])}**. "
         f"Це приблизно **{_money(facts['per_day'])} щодня**.\n\n"
         f"Найбільше грошей ({round(top['share'] * 100)}%) пішло на категорію "
@@ -81,18 +81,20 @@ def _ask_llm(prompt: str) -> str:
     # За замовчуванням — Gemini
     url = ("https://generativelanguage.googleapis.com/v1beta/models/"
            f"{LLM_MODEL}:generateContent")
+    
     r = requests.post(
         url,
         params={"key": LLM_API_KEY},
         json={
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {
-                "maxOutputTokens": 1024,
+                "maxOutputTokens": 2048,
                 "thinkingConfig": {"thinkingBudget": 0},  # вимикає «роздуми» у flash-моделях
             },
         },
         timeout=60,
     )
+
     r.raise_for_status()
     return r.json()["candidates"][0]["content"]["parts"][0]["text"]
 
@@ -149,13 +151,14 @@ def write_story(summary: dict) -> str:
     if summary["facts"] is None:
         return f"За {summary['year']} рік завершених закупівель немає."
 
-    try:
-        text = _ask_llm(build_prompt(summary)).strip()
-        if len(text) < 50:  # порожня або підозріло коротка відповідь
-            return template_story(summary)
-        return text
-    except Exception:
-        return template_story(summary)
+    for _ in range(2):  # дві спроби
+        try:
+            text = _ask_llm(build_prompt(summary)).strip()
+            if len(text) >= 50:
+                return text
+        except Exception:
+            pass
+    return template_story(summary)
 
 
 def classify_titles(titles: list[str]) -> dict[str, str]:
@@ -192,6 +195,10 @@ if __name__ == "__main__":
     path = os.path.join(os.path.dirname(__file__), "data", "samples", "summary_2025.json")
     with open(path, encoding="utf-8") as f:
         example = json.load(f)
+        try:
+            print(_ask_llm("Скажи привіт"))
+        except Exception as e:
+            print("ПОМИЛКА:", e)
 
     print("=== Шаблонна історія ===")
     print(template_story(example))
