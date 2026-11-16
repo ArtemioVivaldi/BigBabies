@@ -1,0 +1,7 @@
+# Тема застосунку: темна, з одним теплим акцентом
+[theme]
+base = "dark"
+primaryColor = "#F4A97A"
+backgroundColor = "#1B2B33"
+secondaryBackgroundColor = "#243840"
+textColor = "#F5EFE6"
