@@ -104,7 +104,7 @@ function render(data) {
       number("Витрачено за рік", money(s.total_amount), "завершені закупівлі") +
       number("Закупівель", s.tenders_count, "окремих покупок за рік") +
       number("Щодня", money(s.facts.per_day), "у середньому за 365 днів");
-    $("story-text").innerHTML = markdown(data.story);
+    $("story-text").innerHTML = markdown(data.story) + storySource(data.story_source);
     $("chart-categories").innerHTML = barChart(s.by_category);
     $("chart-months").innerHTML = lineChart(s.by_month, s.facts.busiest_month.month);
     $("chart-heatmap").innerHTML = heatmap(data.heatmap);
@@ -118,6 +118,13 @@ function render(data) {
 
 const number = (label, value, note) =>
   `<div class="num reveal"><div class="num-label">${label}</div><div class="num-value">${value}</div><div class="num-note">${note}</div></div>`;
+
+// Підпис під історією: хто її написав
+function storySource(source) {
+  if (source === "ai") return '<p class="story-source">✦ Історію написав штучний інтелект на основі цифр Prozorro. Усі суми пораховані програмою.</p>';
+  if (source === "template") return '<p class="story-source warn">Історію зібрано за шаблоном: штучний інтелект зараз недоступний.</p>';
+  return "";
+}
 
 // Дуже проста обробка Markdown: заголовки, жирний, курсив, абзаци
 function markdown(text) {

@@ -13,10 +13,7 @@ from urllib.parse import parse_qs, urlparse
 from analysis import available_years, build_summary, categorize
 from data_loader import get_tenders, search_schools
 
-try:
-    from ai_writer import write_story
-except ImportError:
-    from ai_writer import template_story as write_story
+from ai_writer import template_story, write_story
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 os.chdir(ROOT)  # data_loader шукає кеш у data/ відносно поточної папки
@@ -171,16 +168,52 @@ def with_guessed_cpv(data: dict) -> dict:
     return {**data, "tenders": tenders}
 
 
+STORY_DIR = "data/stories"
+
+
+def is_complete(story: str) -> bool:
+    """Історія закінчена, якщо ШІ дописав останній рядок із джерелом (його вимагає промпт)."""
+    lines = [line for line in story.strip().splitlines() if line.strip()]
+    return bool(lines) and "Prozorro" in lines[-1]
+
+
+def get_story(edrpou: str, year: int, summary: dict) -> tuple[str, str]:
+    """Історія для установи й року: (текст, джерело). Джерело: «ai», «template» або «none».
+
+    Вдалу історію від ШІ зберігаємо у data/stories/<ЄДРПОУ>_<рік>.md і далі читаємо з файлу:
+    демо стає швидким і не залежить від того, чи відповість ШІ саме зараз.
+    Шаблонну історію (коли ШІ недоступний) у кеш НЕ пишемо — наступного разу спробуємо ШІ знову.
+    """
+    if not summary["facts"]:
+        return "", "none"
+    path = os.path.join(STORY_DIR, f"{edrpou}_{year}.md")
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            cached = f.read()
+        if is_complete(cached):
+            return cached, "ai"
+    for _ in range(3):  # ШІ іноді обриває текст посеред речення — тоді просимо ще раз
+        story = write_story(summary)
+        if story == template_story(summary):
+            return story, "template"  # ШІ недоступний: далі пробувати марно
+        if is_complete(story):
+            os.makedirs(STORY_DIR, exist_ok=True)
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(story)
+            return story, "ai"
+    return template_story(summary), "template"  # три обрізані відповіді поспіль
+
+
 def api_summary(edrpou: str, year: str | None) -> dict:
     """Усе, що потрібно сторінці для однієї установи й року."""
     data = with_guessed_cpv(get_tenders(edrpou))
     years = available_years(data["tenders"])
     if not years:
-        return {"years": [], "summary": None, "story": "", "heatmap": [], "analytics": None, "timeline": None}
+        return {"years": [], "summary": None, "story": "", "story_source": "none", "heatmap": [], "analytics": None, "timeline": None}
     chosen = int(year) if year else years[0]
     summary = build_summary(data, chosen)
-    story = write_story(summary) if summary["facts"] else ""
-    return {"years": years, "summary": summary, "story": story, "heatmap": make_heatmap(data, chosen),
+    story, story_source = get_story(edrpou, chosen, summary)
+    return {"years": years, "summary": summary, "story": story, "story_source": story_source, "heatmap": make_heatmap(data, chosen),
             "analytics": make_analytics(data, chosen, summary), "timeline": make_timeline(data)}
 
 

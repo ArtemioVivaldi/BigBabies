@@ -163,3 +163,6 @@ h4 { font-size: 16px; font-weight: 600; margin: 24px 0 12px; }
 .timeline-head h3 { margin: 0; }
 .tl-numbers { margin-top: 24px; }
 .tl-small { font-size: clamp(20px, 2.4vw, 30px); white-space: normal; }
+
+.story-source { font-size: 13px !important; color: var(--muted); margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border); }
+.story-source.warn { color: var(--accent); }
