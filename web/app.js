@@ -177,3 +177,40 @@ function topTable(purchases) {
     `<td class="amount">${money(p.amount)}</td><td><a href="https://prozorro.gov.ua/tender/${p.tender_id}" target="_blank" rel="noopener">відкрити</a></td></tr>`);
   return `<table><tr><th>Що купували</th><th>Категорія</th><th>Дата</th><th>Сума</th><th>Prozorro</th></tr>${rows.join("")}</table>`;
 }
+
+
+// ---------- Поверхи: липнуть і накладаються одне на одне ----------
+
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function floors() {
+  return [...document.querySelectorAll(".floor")].filter((el) => el.offsetParent !== null || getComputedStyle(el).position === "sticky");
+}
+
+// Липка картка вища за екран прилипає не верхом, а низом — інакше її нижню частину не побачити
+function placeFloors() {
+  for (const el of document.querySelectorAll(".floor:not(.search-floor)")) {
+    el.style.top = Math.min(16, window.innerHeight - el.offsetHeight - 16) + "px";
+  }
+  updateStack();
+}
+
+// Коли наступний поверх наїжджає на попередній, попередній трохи зменшується й темніє
+function updateStack() {
+  const list = floors();
+  list.forEach((el, i) => {
+    const next = list[i + 1];
+    if (!next || reduceMotion || el.classList.contains("search-floor")) { el.style.transform = ""; el.style.filter = ""; return; }
+    const nextTop = next.getBoundingClientRect().top;
+    const covered = Math.min(1, Math.max(0, 1 - nextTop / window.innerHeight));
+    const stuck = el.getBoundingClientRect().top <= parseFloat(el.style.top || 16) + 1;
+    const p = stuck ? covered : 0;
+    el.style.transform = p ? `scale(${1 - 0.05 * p})` : "";
+    el.style.filter = p ? `brightness(${1 - 0.3 * p})` : "";
+  });
+}
+
+window.addEventListener("scroll", updateStack, { passive: true });
+window.addEventListener("resize", placeFloors);
+new ResizeObserver(placeFloors).observe(document.body);  // розміри змінюються, коли з'являються дані
+placeFloors();
