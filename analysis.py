@@ -150,3 +150,19 @@ def build_summary(data: dict, year: int) -> dict:
         "facts": facts,
         "uncategorized_titles": uncategorized,
     }
+if __name__ == "__main__":
+    # Самоперевірка: python analysis.py
+    import json
+    import os
+
+    folder = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(folder, "data", "22416862.json"), encoding="utf-8") as f:
+        data = json.load(f)
+    with open(os.path.join(folder, "data", "samples", "summary_2025.json"),
+              encoding="utf-8") as f:
+        expected = json.load(f)
+
+    summary = build_summary(data, 2025)
+    print("Сума:", summary["total_amount"], "| закупівель:", summary["tenders_count"])
+    print("Збігається з еталоном:", summary == expected)
+    print("Рік без закупівель (2030) працює:", build_summary(data, 2030)["facts"] is None)
