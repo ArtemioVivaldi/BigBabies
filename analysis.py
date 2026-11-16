@@ -66,3 +66,87 @@ def available_years(tenders: list[dict]) -> list[int]:
             years.append(tender["year"])
     years.sort(reverse=True)
     return years
+
+
+def make_record(tender: dict, category: str) -> dict:
+    """Короткий опис закупівлі для top_purchases і facts."""
+    return {
+        "tender_id": tender["tender_id"],
+        "title": tender["title"],
+        "amount": round(tender["amount"], 2),
+        "date": tender["date"],
+        "category": category,
+    }
+
+
+def build_summary(data: dict, year: int) -> dict:
+    """Рахує «підсумки року» за результатом get_tenders і роком."""
+    # 1. Залишаємо лише завершені закупівлі потрібного року
+    chosen = []
+    for tender in data["tenders"]:
+        if tender["year"] == year and tender["status"] == "complete":
+            chosen.append(tender)
+
+    # 2. Загальна сума, сума і кількість по категоріях, суми по місяцях
+    total = 0.0
+    sums = {}    # категорія -> сума
+    counts = {}  # категорія -> кількість
+    month_sums = {month: 0.0 for month in range(1, 13)}
+    records = []  # закупівлі з категорією, для top_purchases і facts
+    uncategorized = []
+    for tender in chosen:
+        category = categorize(tender)
+        total += tender["amount"]
+        sums[category] = sums.get(category, 0.0) + tender["amount"]
+        counts[category] = counts.get(category, 0) + 1
+        month_sums[tender["month"]] += tender["amount"]
+        records.append(make_record(tender, category))
+        if category == "Інше":
+            uncategorized.append(tender["title"])
+
+    # 3. Список категорій (лише ті, де є закупівлі), від більшої суми до меншої
+    by_category = []
+    for category in CATEGORIES:
+        if category in counts:
+            by_category.append({
+                "category": category,
+                "amount": round(sums[category], 2),
+                "count": counts[category],
+                "share": round(sums[category] / total, 4) if total > 0 else 0.0,
+            })
+    by_category.sort(key=lambda item: item["amount"], reverse=True)
+
+    # 4. Завжди 12 місяців
+    by_month = []
+    for month in range(1, 13):
+        by_month.append({"month": month, "amount": round(month_sums[month], 2)})
+
+    # 5. Найдорожчі закупівлі та цікаві факти
+    records.sort(key=lambda item: item["amount"], reverse=True)
+    top_purchases = records[:5]
+
+    if len(records) == 0:
+        facts = None  # за рік немає закупівель
+    else:
+        busiest = by_month[0]
+        for item in by_month:
+            if item["amount"] > busiest["amount"]:
+                busiest = item
+        facts = {
+            "biggest": records[0],
+            "smallest": records[-1],
+            "busiest_month": dict(busiest),
+            "per_day": round(total / 365, 2),
+        }
+
+    return {
+        "school": data["school"],
+        "year": year,
+        "total_amount": round(total, 2),
+        "tenders_count": len(chosen),
+        "by_category": by_category,
+        "top_purchases": top_purchases,
+        "by_month": by_month,
+        "facts": facts,
+        "uncategorized_titles": uncategorized,
+    }
