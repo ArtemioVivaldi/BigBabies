@@ -1,0 +1,165 @@
+/* Стиль узято з головної сторінки сайту продажів: нейтральна палітра + помаранчевий акцент,
+   повноекранні блоки, кнопки-пілюлі, прозора темна шапка, автоматична світла/темна тема. */
+:root {
+  color-scheme: light;
+  --bg: #f7f7f4; --surface: #ffffff; --surface-2: #eeeee9;
+  --text: #121417; --muted: #5a606a; --border: #e0e0d9;
+  --accent: #f2a122; --accent-hover: #ffb347; --accent-ink: #1b1200;
+  --header-h: 64px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0b0c0e; --surface: #141619; --surface-2: #1b1e22;
+    --text: #eef0f3; --muted: #9ba2ac; --border: #272b31;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b0c0e; --surface: #141619; --surface-2: #1b1e22;
+  --text: #eef0f3; --muted: #9ba2ac; --border: #272b31;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: var(--header-h); }
+body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.55; -webkit-font-smoothing: antialiased;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; transition: background-color .3s, color .3s; }
+a { color: inherit; text-decoration: none; }
+h1, h2, h3, h4, p { margin: 0; }
+h2 { font-size: clamp(28px, 4vw, 48px); line-height: 1.08; letter-spacing: -0.03em; font-weight: 600; }
+h3 { font-size: clamp(22px, 2.4vw, 30px); letter-spacing: -0.02em; font-weight: 600; margin-bottom: 20px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.container { max-width: 1240px; margin-inline: auto; padding-inline: clamp(16px, 3vw, 40px); }
+.narrow { max-width: 860px; }
+.center { text-align: center; }
+.muted { color: var(--muted); }
+
+/* ---------- Кнопки ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 28px;
+  border-radius: 999px; border: 1px solid transparent; font-size: 15px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  transition: background-color .2s, border-color .2s, color .2s, transform .15s; }
+.btn:active { transform: scale(0.97); }
+.btn-sm { height: 38px; padding: 0 18px; font-size: 14px; }
+.btn-accent { background: var(--accent); color: var(--accent-ink); }
+.btn-accent:hover { background: var(--accent-hover); }
+.btn-outline { border-color: rgba(255, 255, 255, .7); color: #fff; }
+.btn-outline:hover { background: rgba(255, 255, 255, .14); border-color: #fff; }
+.icon-btn { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; cursor: pointer; font-size: 18px;
+  border: 1px solid rgba(255, 255, 255, .22); background: transparent; color: #fff; transition: background-color .2s, border-color .2s; }
+.icon-btn:hover { background: rgba(255, 255, 255, .12); border-color: rgba(255, 255, 255, .5); }
+
+/* ---------- Прозора темна шапка ---------- */
+.header { position: fixed; inset: 0 0 auto 0; z-index: 50; height: var(--header-h); color: #fff;
+  background: rgba(10, 11, 13, .62); -webkit-backdrop-filter: blur(16px) saturate(1.4); backdrop-filter: blur(16px) saturate(1.4);
+  border-bottom: 1px solid rgba(255, 255, 255, .08); }
+.header-inner { display: flex; align-items: center; gap: 36px; height: 100%; max-width: 1360px; margin-inline: auto; padding-inline: clamp(16px, 3vw, 40px); }
+.logo { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -0.01em; }
+.logo-box { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.nav { display: flex; align-items: center; gap: 6px; }
+.nav-link { display: inline-flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(255, 255, 255, .85); }
+.nav-link:hover { color: #fff; background: rgba(255, 255, 255, .08); }
+.nav-link[hidden] { display: none; }
+.header-actions { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+@media (max-width: 960px) { .nav { display: none; } }
+
+/* ---------- Повноекранні блоки ---------- */
+.screen { position: relative; min-height: 100vh; min-height: 100svh; display: flex; align-items: flex-end; justify-content: center;
+  text-align: center; color: #fff; overflow: hidden; background: #0b0c0e; }
+.screen-bg { position: absolute; inset: 0; background:
+  radial-gradient(ellipse 55% 50% at 72% 28%, rgba(242, 161, 34, .38), transparent 70%),
+  radial-gradient(ellipse 45% 40% at 20% 70%, rgba(38, 114, 138, .25), transparent 70%),
+  linear-gradient(160deg, #181b21, #0a0b0d); }
+.screen::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(to top, rgba(5, 6, 8, .8) 0%, rgba(5, 6, 8, .4) 36%, rgba(5, 6, 8, 0) 62%); }
+.screen-content { position: relative; z-index: 2; width: min(960px, 100%); padding: 0 24px clamp(48px, 9vh, 96px); }
+.screen-title { font-size: clamp(36px, 6vw, 80px); line-height: 1.03; letter-spacing: -0.04em; font-weight: 600; text-wrap: balance; }
+.screen-text { max-width: 620px; margin: 16px auto 0; font-size: clamp(16px, 1.5vw, 20px); color: rgba(255, 255, 255, .88); text-wrap: balance; }
+.btn-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 30px; }
+
+.section { padding: clamp(72px, 11vw, 150px) 0; }
+.section-alt { background: var(--surface-2); }
+.screen-section { min-height: 100svh; display: flex; align-items: center; }
+.screen-section > .container { width: 100%; }
+
+/* ---------- Як це працює ---------- */
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 32px; margin-top: 40px; }
+.step b { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); margin-bottom: 14px; }
+.step p { color: var(--muted); }
+
+/* ---------- Пошук ---------- */
+.search { position: relative; margin-top: 28px; }
+.search input { display: block; width: 100%; height: 60px; padding: 0 24px; font: inherit; font-size: 17px; color: var(--text);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 999px; }
+.search input:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+#suggestions { position: absolute; left: 0; right: 0; z-index: 20; margin: 8px 0 0; padding: 8px; list-style: none; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 20px; max-height: 340px; overflow: auto; box-shadow: 0 16px 48px rgba(0, 0, 0, .18); }
+#suggestions li { padding: 12px 16px; cursor: pointer; border-radius: 12px; }
+#suggestions li:hover { background: var(--surface-2); }
+.message { margin-top: 20px; padding: 14px 20px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
+.message[hidden] { display: none; }
+.message.error { border-color: #c25b56; color: #c25b56; }
+
+/* ---------- Результат ---------- */
+.pill { display: inline-block; border: 1px solid var(--border); border-radius: 999px; padding: 3px 14px; font-size: 13px; color: var(--muted); margin: 0 4px 4px; }
+.big-title { font-size: clamp(32px, 5vw, 64px); letter-spacing: -0.04em; margin: 14px 0 22px; text-wrap: balance; }
+#years { margin-bottom: 40px; }
+.year-btn { font: inherit; font-size: 14px; font-weight: 600; background: none; color: var(--text); border: 1px solid var(--border); border-radius: 999px;
+  padding: 8px 20px; margin: 0 4px; cursor: pointer; transition: background-color .2s, border-color .2s; }
+.year-btn:hover { border-color: var(--muted); }
+.year-btn.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+.numbers { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 40px; text-align: left; }
+.num { border-top: 2px solid var(--text); padding-top: 14px; }
+.num-label { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.num-value { font-size: clamp(34px, 4.4vw, 56px); line-height: 1.1; font-weight: 600; letter-spacing: -0.03em; white-space: nowrap; }
+.num-note { font-size: 14px; color: var(--muted); }
+
+.story h2 { font-size: clamp(24px, 3vw, 36px); margin-bottom: 20px; }
+.story p { font-size: clamp(16px, 1.5vw, 19px); margin-bottom: 16px; }
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(28px, 4vw, 56px); }
+@media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+svg { width: 100%; height: auto; display: block; }
+svg text { fill: currentColor; font-family: inherit; }
+.source { font-size: 13px; color: var(--muted); margin-top: 12px; }
+
+table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+th, td { text-align: left; padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
+th { background: var(--surface-2); font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+td.amount { text-align: right; white-space: nowrap; font-weight: 600; }
+td a { color: var(--accent); font-weight: 600; }
+.table-wrap { overflow-x: auto; }
+
+/* ---------- Підвал ---------- */
+.footer { background: #0b0c0e; color: #eef0f3; padding: 64px 0 56px; margin-top: 0; }
+.footer-grid { display: grid; grid-template-columns: 1.4fr 1fr 1.2fr 1.2fr; gap: 40px; font-size: 14px; }
+@media (max-width: 860px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+.footer h4 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: #9ba2ac; margin-bottom: 14px; font-weight: 500; }
+.footer a { display: block; padding: 4px 0; color: #eef0f3; }
+.footer a:hover { color: var(--accent); }
+.footer .muted { color: #9ba2ac; display: block; margin-top: 8px; }
+
+/* ---------- М'яка поява, як на Enphase: прозорість 0→1 і зсув на 24px за 0,5 с ---------- */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .5s cubic-bezier(.4, 0, .2, 1), transform .5s cubic-bezier(.4, 0, .2, 1); }
+  .reveal.in { opacity: 1; transform: none; }
+}
+
+@media (max-width: 520px) { .header .logo-text { display: none; } }
+
+/* ---------- Додаткова аналітика ---------- */
+h4 { font-size: 16px; font-weight: 600; margin: 24px 0 12px; }
+.compare-grid { margin-top: 32px; }
+.legend { font-size: 13px; color: var(--muted); margin-top: 10px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin: 0 4px 0 12px; vertical-align: -1px; }
+.legend i:first-child { margin-left: 0; }
+.legend-wrap { display: flex; flex-wrap: wrap; gap: 6px 4px; }
+.insight { font-size: clamp(17px, 1.8vw, 22px); margin: 28px 0 12px; max-width: 46rem; }
+.insight b { color: var(--accent); }
+
+/* ---------- Витрати за весь час ---------- */
+.timeline-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.timeline-head h3 { margin: 0; }
+.tl-numbers { margin-top: 24px; }
+.tl-small { font-size: clamp(20px, 2.4vw, 30px); white-space: normal; }
