@@ -136,7 +136,7 @@ python api.py
 
 | Учасник | Частина |
 |---|---|
-| … | Дані (`data_loader.py`) |
+| Кальмус Ян | Дані (`data_loader.py`) |
 | … | Аналітика (`analysis.py`) |
-| … | ШІ (`ai_writer.py`) |
+| Андрій | ШІ (`ai_writer.py`) |
 | … | Інтерфейс (`api.py`, `web/`) |
