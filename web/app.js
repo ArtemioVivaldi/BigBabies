@@ -98,7 +98,7 @@ function render(data) {
     $("years").appendChild(b);
   }
 
-  for (const id of ["numbers-grid", "story-text", "chart-categories", "chart-months", "chart-heatmap", "top5-table", "compare-box", "sizes-box"]) $(id).innerHTML = "";
+  for (const id of ["numbers-grid", "story-text", "chart-categories", "chart-months", "chart-heatmap", "top5-table", "compare-box", "sizes-box", "timeline-chart", "timeline-summary"]) $(id).innerHTML = "";
   if (s.facts) {
     $("numbers-grid").innerHTML =
       number("Витрачено за рік", money(s.total_amount), "завершені закупівлі") +
@@ -111,6 +111,7 @@ function render(data) {
     $("top5-table").innerHTML = topTable(s.top_purchases);
     $("compare-box").innerHTML = compareBlock(data.analytics, s);
     $("sizes-box").innerHTML = sizesBlock(data.analytics);
+    drawTimeline(data.timeline, s.year);
   }
   armReveal();
 }
@@ -268,6 +269,152 @@ function sizesBlock(a) {
     `<p class="insight reveal">П'ять найбільших закупівель — це <b>${Math.round(a.top5_share * 100)}%</b> усіх грошей року. ` +
     `Типова (медіанна) закупівля коштує <b>${money(a.median)}</b>.</p>` +
     `<p class="muted reveal">Чим закінчились закупівлі цього року: ${done}</p>`;
+}
+
+// ---------- Витрати за весь час: шари, плавна лінія і рамка вибору періоду ----------
+
+const MONTH_LETTERS = ["С", "Л", "Б", "К", "Т", "Ч", "Л", "С", "В", "Ж", "Л", "Г"];
+
+// Плавна лінія, що не «вилітає» за межі даних (монотонна кубічна інтерполяція)
+function smoothPath(pts) {
+  const n = pts.length;
+  if (n < 2) return "";
+  const dx = [], m = [], t = [];
+  for (let i = 0; i < n - 1; i++) { dx[i] = pts[i + 1][0] - pts[i][0]; m[i] = (pts[i + 1][1] - pts[i][1]) / dx[i]; }
+  t[0] = m[0]; t[n - 1] = m[n - 2];
+  for (let i = 1; i < n - 1; i++) t[i] = m[i - 1] * m[i] <= 0 ? 0 : (m[i - 1] + m[i]) / 2;
+  for (let i = 0; i < n - 1; i++) {
+    if (m[i] === 0) { t[i] = t[i + 1] = 0; continue; }
+    const a = t[i] / m[i], b = t[i + 1] / m[i], s2 = a * a + b * b;
+    if (s2 > 9) { const k = 3 / Math.sqrt(s2); t[i] = k * a * m[i]; t[i + 1] = k * b * m[i]; }
+  }
+  let d = `M${pts[0][0]},${pts[0][1]}`;
+  for (let i = 0; i < n - 1; i++) {
+    d += `C${pts[i][0] + dx[i] / 3},${pts[i][1] + (t[i] * dx[i]) / 3} ${pts[i + 1][0] - dx[i] / 3},${pts[i + 1][1] - (t[i + 1] * dx[i]) / 3} ${pts[i + 1][0]},${pts[i + 1][1]}`;
+  }
+  return d;
+}
+
+const short = (v) => (v >= 1e6 ? (v / 1e6).toFixed(1).replace(".0", "") + " млн" : v >= 1e3 ? Math.round(v / 1e3) + " тис." : Math.round(v));
+const monthName = (mo) => `${MONTHS[mo.m - 1]} ${mo.y}`;
+
+function drawTimeline(tl, year) {
+  const box = $("timeline-chart");
+  if (!tl || !tl.months.length) { box.innerHTML = '<p class="muted">Немає даних.</p>'; return; }
+  const months = tl.months, n = months.length;
+  const W = 1000, H = 430, L = 54, R = 120, T = 34, B = 70, cw = (W - L - R) / n;
+  const maxV = Math.max(...months.map((m) => m.amount)) * 1.1 || 1;
+  const x = (i) => L + (i + 0.5) * cw, y = (v) => T + (H - T - B) * (1 - v / maxV);
+  const maxTender = Math.max(...months.flatMap((m) => m.tenders), 1);
+
+  // Згладжена лінія: середнє за 3 місяці (сам місяць і сусідні) — так видно тренд, а не поодинокі стрибки
+  const smooth = months.map((_, i) => {
+    const win = months.slice(Math.max(0, i - 1), Math.min(n, i + 2));
+    return win.reduce((a, m) => a + m.amount, 0) / win.length;
+  });
+  // 12-місячне ковзне середнє — пунктирна лінія «звичайного рівня»
+  const avg = months.map((_, i) => {
+    const win = months.slice(Math.max(0, i - 11), i + 1);
+    return win.reduce((a, m) => a + m.amount, 0) / win.length;
+  });
+
+  let svg = `<svg id="tl-svg" viewBox="0 0 ${W} ${H}" style="touch-action:none;user-select:none">`;
+
+  // Сітка й підписи осі Y
+  for (let k = 0; k <= 5; k++) {
+    const v = (maxV * k) / 5;
+    svg += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="currentColor" stroke-opacity=".08"/>` +
+           `<text x="${L - 8}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill-opacity=".6">${k === 0 ? 0 : short(v)}</text>`;
+  }
+
+  // Шари: кожна закупівля місяця — окремий напівпрозорий сегмент, що більше — то насиченіше
+  months.forEach((mo, i) => {
+    let acc = 0;
+    for (const a of [...mo.tenders].reverse()) {  // від найменших знизу до найбільших угорі
+      const ratio = Math.sqrt(a / maxTender);
+      svg += `<rect x="${x(i) - cw * 0.46}" y="${y(acc + a)}" width="${cw * 0.92}" height="${Math.max(y(acc) - y(acc + a) - 0.6, 0.4)}" ` +
+             `fill="${ratio > 0.5 ? "#f2a122" : "#e8c547"}" fill-opacity="${(0.25 + 0.7 * ratio).toFixed(2)}"/>`;
+      acc += a;
+    }
+  });
+
+  // Вісь X: роки, квартали (або літери місяців, якщо їх мало), вертикальні межі років
+  const axisY = H - B;
+  svg += `<line x1="${L}" x2="${W - R}" y1="${axisY}" y2="${axisY}" stroke="currentColor" stroke-opacity=".7"/>`;
+  months.forEach((mo, i) => {
+    const left = L + i * cw;
+    if (mo.m === 1 && i > 0) svg += `<line x1="${left}" x2="${left}" y1="${T}" y2="${axisY + 40}" stroke="currentColor" stroke-opacity=".15"/>`;
+    if (n <= 36) svg += `<text x="${x(i)}" y="${axisY + 16}" text-anchor="middle" font-size="11" fill-opacity=".75">${MONTH_LETTERS[mo.m - 1]}</text>`;
+    if ((mo.m - 1) % 3 === 0 && n <= 60) svg += `<text x="${left + cw * 1.5}" y="${axisY + 34}" text-anchor="middle" font-size="10" fill-opacity=".45">Q${(mo.m - 1) / 3 + 1}</text>`;
+  });
+  const yearsSeen = [...new Set(months.map((m) => m.y))];
+  for (const yr of yearsSeen) {
+    const idx = months.map((m, i) => (m.y === yr ? i : -1)).filter((i) => i >= 0);
+    const mid = (x(idx[0]) + x(idx[idx.length - 1])) / 2;
+    svg += `<text x="${mid}" y="${axisY + 56}" text-anchor="middle" font-size="12" font-weight="600">${yr}</text>`;
+  }
+
+  // Лінії: пунктир — ковзне середнє, суцільна з точками — витрати за місяць
+  svg += `<path d="${smoothPath(months.map((_, i) => [x(i), y(avg[i])]))}" fill="none" stroke="currentColor" stroke-opacity=".6" stroke-dasharray="5 5" stroke-width="1.5"/>`;
+  svg += `<path d="${smoothPath(months.map((_, i) => [x(i), y(smooth[i])]))}" fill="none" stroke="currentColor" stroke-width="2.2"/>`;
+  if (n <= 48) months.forEach((mo, i) => { svg += `<circle cx="${x(i)}" cy="${y(smooth[i])}" r="3" fill="currentColor"><title>${monthName(mo)}: ${money(mo.amount)} (на лінії — середнє за 3 міс.)</title></circle>`; });
+  // Легенда зверху праворуч
+  svg += `<line x1="${W - 330}" x2="${W - 308}" y1="${T - 18}" y2="${T - 18}" stroke="currentColor" stroke-width="2.2"/><text x="${W - 303}" y="${T - 14}" font-size="11">Тренд (3 міс.)</text>` +
+         `<line x1="${W - 205}" x2="${W - 183}" y1="${T - 18}" y2="${T - 18}" stroke="currentColor" stroke-opacity=".6" stroke-dasharray="5 5" stroke-width="1.5"/><text x="${W - 178}" y="${T - 14}" font-size="11">Середнє за 12 міс.</text>`;
+  svg += `<text x="${L}" y="${T - 14}" font-size="12" font-weight="600">Стовпці — окремі закупівлі за місяць</text>`;
+
+  // Рамка вибору періоду (оновлюється під час перетягування)
+  svg += `<g id="tl-sel"></g></svg>`;
+  box.innerHTML = svg;
+
+  const svgEl = $("tl-svg");
+  const first = months.findIndex((m) => m.y === year), lastIdx = months.map((m) => m.y).lastIndexOf(year);
+  let a = first >= 0 ? first : Math.max(0, n - 12), b = lastIdx >= 0 ? lastIdx : n - 1;  // за замовчуванням — обраний рік
+
+  function renderSelection() {
+    const x1 = L + a * cw, x2 = L + (b + 1) * cw, y1 = T - 6, y2 = axisY;
+    const slice = months.slice(a, b + 1), hi = slice.reduce((p, c) => (c.amount > p.amount ? c : p)), lo = (slice.filter((m) => m.amount > 0).length ? slice.filter((m) => m.amount > 0) : slice).reduce((p, c) => (c.amount < p.amount ? c : p));
+    const handle = (cx, cy, name) => `<rect data-h="${name}" x="${cx - 6}" y="${cy - 6}" width="12" height="12" fill="#f2a122" style="cursor:ew-resize"/>`;
+    $("tl-sel").innerHTML =
+      `<rect data-h="move" x="${x1}" y="${y1}" width="${x2 - x1}" height="${y2 - y1}" fill="#f2a122" fill-opacity=".1" stroke="#f2a122" stroke-width="2" style="cursor:grab"/>` +
+      handle(x1, y1, "left") + handle(x2, y1, "right") + handle(x1, y2, "left") + handle(x2, y2, "right") +
+      `<line x1="${x2}" x2="${x2 + 10}" y1="${y(hi.amount)}" y2="${y(hi.amount)}" stroke="currentColor" stroke-opacity=".5"/>` +
+      `<text x="${x2 + 14}" y="${y(hi.amount) + 4}" font-size="11"><tspan fill-opacity=".55">max </tspan><tspan font-weight="600">${short(hi.amount)}</tspan></text>` +
+      `<line x1="${x2}" x2="${x2 + 10}" y1="${y(lo.amount)}" y2="${y(lo.amount)}" stroke="currentColor" stroke-opacity=".5"/>` +
+      `<text x="${x2 + 14}" y="${y(lo.amount) + 4}" font-size="11"><tspan fill-opacity=".55">min </tspan><tspan font-weight="600">${short(lo.amount)}</tspan></text>`;
+    const total = slice.reduce((s, m) => s + m.amount, 0), count = slice.reduce((s, m) => s + m.tenders.length, 0);
+    $("timeline-summary").innerHTML =
+      `<div class="numbers tl-numbers">` +
+      `<div class="num"><div class="num-label">Обраний період</div><div class="num-value tl-small">${monthName(months[a])} – ${monthName(months[b])}</div><div class="num-note">${slice.length} міс.</div></div>` +
+      `<div class="num"><div class="num-label">Витрачено</div><div class="num-value tl-small">${money(total)}</div><div class="num-note">${count} закупівель, у середньому ${money(total / slice.length)} на місяць</div></div>` +
+      `<div class="num"><div class="num-label">Найдорожчий / найдешевший місяць (з витратами)</div><div class="num-value tl-small">${short(hi.amount)} / ${short(lo.amount)}</div><div class="num-note">${monthName(hi)} / ${monthName(lo)}</div></div></div>`;
+  }
+
+  // Перетягування: рух рамки цілком або зміна лівого/правого краю; крок — один місяць
+  let drag = null;
+  const toIndex = (ev) => {
+    const r = svgEl.getBoundingClientRect();
+    return Math.min(n - 1, Math.max(0, Math.floor(((ev.clientX - r.left) / r.width * W - L) / cw)));
+  };
+  svgEl.addEventListener("pointerdown", (ev) => {
+    const h = ev.target.dataset && ev.target.dataset.h;
+    if (!h) return;
+    drag = { h, start: toIndex(ev), a, b };
+    svgEl.setPointerCapture(ev.pointerId);
+    ev.preventDefault();
+  });
+  svgEl.addEventListener("pointermove", (ev) => {
+    if (!drag) return;
+    const i = toIndex(ev), len = drag.b - drag.a;
+    if (drag.h === "move") { a = Math.min(Math.max(0, drag.a + i - drag.start), n - 1 - len); b = a + len; }
+    else if (drag.h === "left") { a = Math.min(i, drag.b); }
+    else { b = Math.max(i, drag.a); }
+    renderSelection();
+  });
+  const stop = () => { drag = null; };
+  svgEl.addEventListener("pointerup", stop);
+  svgEl.addEventListener("pointercancel", stop);
+  renderSelection();
 }
 
 // ---------- Світла / темна тема ----------

@@ -16,6 +16,7 @@
       <nav class="nav">
         <a class="nav-link" href="#search">Пошук</a>
         <a class="nav-link nav-result" href="#numbers" hidden>Підсумки</a>
+        <a class="nav-link nav-result" href="#timeline" hidden>За весь час</a>
         <a class="nav-link nav-result" href="#charts" hidden>Графіки</a>
         <a class="nav-link nav-result" href="#compare" hidden>Аналітика</a>
         <a class="nav-link nav-result" href="#heatmap" hidden>Теплова карта</a>
@@ -80,7 +81,18 @@
         <div class="container narrow"><div class="story reveal" id="story-text"></div></div>
       </section>
 
-      <section class="section" id="charts">
+      <section class="section" id="timeline">
+        <div class="container">
+          <div class="timeline-head">
+            <h3 class="reveal">Витрати за весь час</h3>
+            <span class="pill">Тягніть рамку або її краї, щоб обрати період</span>
+          </div>
+          <div id="timeline-chart" class="reveal"></div>
+          <div id="timeline-summary"></div>
+        </div>
+      </section>
+
+      <section class="section section-alt" id="charts">
         <div class="container">
           <div class="grid">
             <div class="reveal"><h3>На що пішли гроші</h3><div id="chart-categories"></div></div>
@@ -89,21 +101,21 @@
         </div>
       </section>
 
-      <section class="section section-alt" id="compare">
+      <section class="section" id="compare">
         <div class="container">
           <h3 class="reveal">Порівняння з минулим роком</h3>
           <div id="compare-box"></div>
         </div>
       </section>
 
-      <section class="section" id="sizes">
+      <section class="section section-alt" id="sizes">
         <div class="container">
           <h3 class="reveal">Дрібні й великі покупки</h3>
           <div id="sizes-box"></div>
         </div>
       </section>
 
-      <section class="section section-alt" id="heatmap">
+      <section class="section" id="heatmap">
         <div class="container">
           <h3 class="reveal">Коли і на що йшли гроші</h3>
           <div id="chart-heatmap" class="reveal"></div>
@@ -111,7 +123,7 @@
         </div>
       </section>
 
-      <section class="section" id="top5">
+      <section class="section section-alt" id="top5">
         <div class="container"><h3 class="reveal">Топ-5 найбільших покупок</h3><div id="top5-table" class="reveal"></div></div>
       </section>
     </div>

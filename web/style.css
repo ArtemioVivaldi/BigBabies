@@ -157,3 +157,9 @@ h4 { font-size: 16px; font-weight: 600; margin: 24px 0 12px; }
 .legend-wrap { display: flex; flex-wrap: wrap; gap: 6px 4px; }
 .insight { font-size: clamp(17px, 1.8vw, 22px); margin: 28px 0 12px; max-width: 46rem; }
 .insight b { color: var(--accent); }
+
+/* ---------- Витрати за весь час ---------- */
+.timeline-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.timeline-head h3 { margin: 0; }
+.tl-numbers { margin-top: 24px; }
+.tl-small { font-size: clamp(20px, 2.4vw, 30px); white-space: normal; }
