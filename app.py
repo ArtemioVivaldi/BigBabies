@@ -164,8 +164,28 @@ def show_top_purchases(summary: dict) -> None:
 
 st.set_page_config(page_title="Гроші моєї школи", page_icon="🎒", layout="wide")
 
-st.title("🎒 Гроші моєї школи")
-st.write("Підсумки року для бюджету школи — простою мовою, на відкритих даних Prozorro.")
+# Загальні стилі: серифні заголовки, темний hero-блок (як у стилі Clarity)
+st.markdown(
+    """<style>
+    h1, h2, h3, .hero-title, .bn-value {font-family: Georgia, "Times New Roman", serif !important;
+        font-weight: 400 !important; letter-spacing: -0.01em;}
+    .hero {background: #050505; color: #F5E2C5; border-radius: 14px; padding: 3rem 2.5rem;
+        text-align: center; margin-bottom: 1.5rem;}
+    .hero-title {font-size: 3rem; line-height: 1.1; margin: 1rem 0 0.8rem 0;}
+    .hero-text {color: #DDD7A3; font-size: 1.05rem; max-width: 42rem; margin: 0 auto;}
+    .pill {display: inline-block; border: 1px solid #DDD7A3; color: #DDD7A3; border-radius: 999px;
+        padding: 0.15rem 0.8rem; font-size: 0.8rem;}
+    </style>""",
+    unsafe_allow_html=True,
+)
+st.markdown(
+    # Увага: у HTML без відступів, інакше Markdown вважає рядки кодом
+    '<div class="hero"><span class="pill">Відкриті дані Prozorro</span>'
+    '<div class="hero-title">Куди пішли гроші<br>вашої школи</div>'
+    '<div class="hero-text">Підсумки року для бюджету школи — простою мовою, '
+    'з графіками й історією, яку пише штучний інтелект.</div></div>',
+    unsafe_allow_html=True,
+)
 
 # 1. Пошук установи: починаємо вводити назву — і список підказок оновлюється одразу
 def suggest_schools(text: str) -> list[tuple[str, str]]:
