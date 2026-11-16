@@ -116,31 +116,34 @@ def get_tenders(edrpou: str, use_cache: bool = True) -> dict:
         while page <= max_pages:
             params = {"buyer[0]": edrpou, "page": page}
             response = requests.post(url, params=params, headers=HEADERS, timeout=15)
+
+            # 429 Too Many Requests
+            if response.status_code == 429:
+                time.sleep(3)
+                continue
+
             response.raise_for_status()
 
             payload = response.json()
             page_data = payload.get("data", [])
 
             if not page_data:
-                break  # Сторінки скінчилися
+                break
 
-            # Витягуємо інформацію про школу з першого запису першої сторінки
             if page == 1 and page_data:
                 proc_entity = page_data[0].get("procuringEntity", {})
                 school_info["name"] = proc_entity.get("name", "")
-                # Адреса / місто
                 address = proc_entity.get("address", {})
                 school_info["city"] = address.get("locality", "")
 
             for item in page_data:
                 all_tenders.append(normalize_tender(item))
 
-            # Якщо повернулось менше 20 записів, це була остання сторінка
             if len(page_data) < 20:
                 break
 
             page += 1
-            time.sleep(0.2)  # Не навантажуємо сервер
+            time.sleep(0.5)  # Збільшена пауза між сторінками
 
     except requests.RequestException as e:
         # Якщо мережа впала і немає кешу — кидаємо помилку згідно з контрактом
@@ -165,21 +168,33 @@ def get_tenders(edrpou: str, use_cache: bool = True) -> dict:
 
 
 if __name__ == "__main__":
-    print("--- Самоперевірка data_loader.py ---")
+    print("--- Генерація кешу для кількох шкіл ---")
 
-    # 1. Тест пошуку
-    query = "школа радості"
-    print(f"Шукаємо: '{query}'...")
-    schools = search_schools(query)
-    print(f"Знайдено установ: {len(schools)}")
-    if schools:
-        print(f"Перший результат: {schools[0]}")
-        test_edrpou = schools[0]["edrpou"]
+    # Список запитів для пошуку кількох різних закладів (для демо)
+    school_queries = [
+        "школа радості",  # Львів (ЄДРПОУ 22416862)
+        "кпі",  # Інститут
+        "Охмадит", # Дитяча поліклініка
+        "музей історії україни у другій світовій"  # Музей
+    ]
 
-        # 2. Тест завантаження закупівель
-        print(f"Завантажуємо закупівлі для ЄДРПОУ {test_edrpou}...")
-        data = get_tenders(test_edrpou, use_cache=False)
-        print(f"Школа: {data['school']['name']} (місто: {data['school']['city']})")
-        print(f"Всього закупівель: {len(data['tenders'])}")
-        if data['tenders']:
-            print(f"Перша закупівля: {data['tenders'][0]}")
+    for query in school_queries:
+        print(f"\nШукаємо за запитом: '{query}'...")
+        schools = search_schools(query)
+
+        if schools:
+            # Беремо першу знайдену школу зі списку
+            target_school = schools[0]
+            edrpou = target_school["edrpou"]
+            name = target_school["name"]
+
+            print(f"Знайдено: {name} (ЄДРПОУ: {edrpou})")
+            print(f"Завантажуємо та кешуємо закупівлі...")
+
+            # Викликаємо get_tenders без кешу, щоб витягнути з мережі та зберегти у data/<ЄДРПОУ>.json
+            data = get_tenders(edrpou, use_cache=False)
+            print(f"Успішно! Завантажено закупівель: {len(data['tenders'])}. Файл збережено у data/{edrpou}.json")
+        else:
+            print(f"Нічого не знайдено за запитом '{query}'.")
+
+    print("\nУсі кеші успішно згенеровано у папці data/!")
