@@ -7,12 +7,14 @@
 """
 import json
 import os
+import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from analysis import available_years, build_summary, categorize
 from data_loader import get_tenders, search_schools
 
+import ai_writer
 from ai_writer import template_story, write_story
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -192,16 +194,20 @@ def get_story(edrpou: str, year: int, summary: dict) -> tuple[str, str]:
             cached = f.read()
         if is_complete(cached):
             return cached, "ai"
-    for _ in range(3):  # ШІ іноді обриває текст посеред речення — тоді просимо ще раз
+    if not ai_writer.LLM_API_KEY:
+        return template_story(summary), "template"  # немає ключа в .env — ШІ не викликаємо
+    # Google часто відповідає 503 («висока навантаженість») приблизно на кожен другий запит,
+    # а модель іноді обриває текст. write_story при помилці тихо повертає шаблон, тому
+    # тут пробуємо кілька разів із короткою паузою, і лише потім погоджуємось на шаблон.
+    for attempt in range(4):
         story = write_story(summary)
-        if story == template_story(summary):
-            return story, "template"  # ШІ недоступний: далі пробувати марно
-        if is_complete(story):
+        if story != template_story(summary) and is_complete(story):
             os.makedirs(STORY_DIR, exist_ok=True)
             with open(path, "w", encoding="utf-8") as f:
                 f.write(story)
             return story, "ai"
-    return template_story(summary), "template"  # три обрізані відповіді поспіль
+        time.sleep(1.5)
+    return template_story(summary), "template"
 
 
 def api_summary(edrpou: str, year: str | None) -> dict:
