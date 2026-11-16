@@ -129,7 +129,7 @@ LLM_MODEL=gemini-3.5-flash-lite
 
 | Учасник | Частина |
 |---|---|
-| … | Дані (`data_loader.py`) |
+| Кальмус Ян | Дані (`data_loader.py`) |
 | … | Аналітика (`analysis.py`) |
 | Андрій | ШІ (`ai_writer.py`) |
 | … | Інтерфейс (`api.py`, `web/`) |
