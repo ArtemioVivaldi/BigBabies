@@ -33,9 +33,21 @@ function showMessage(text, isError = false) {
 
 let searchTimer = null;
 $("q").addEventListener("input", () => {
+  $("clear").hidden = !$("q").value;  // хрестик видно, лише коли в полі є текст
   clearTimeout(searchTimer);  // чекаємо 250 мс після останньої літери
   searchTimer = setTimeout(runSearch, 250);
 });
+
+// Кнопка «×» (і клавіша Esc) очищає поле й підказки та повертає курсор у поле
+function clearSearch() {
+  clearTimeout(searchTimer);
+  $("q").value = "";
+  $("clear").hidden = true;
+  $("suggestions").hidden = true;
+  $("q").focus();
+}
+$("clear").addEventListener("click", clearSearch);
+$("q").addEventListener("keydown", (e) => { if (e.key === "Escape") clearSearch(); });
 document.addEventListener("click", (e) => { if (!e.target.closest(".search")) $("suggestions").hidden = true; });
 // Обидві кнопки «Знайти установу» переводять курсор у поле пошуку
 for (const id of ["cta-hero", "cta-nav"]) $(id).addEventListener("click", () => setTimeout(() => $("q").focus({ preventScroll: true }), 600));
@@ -50,7 +62,7 @@ async function runSearch() {
     for (const school of schools) {
       const li = document.createElement("li");
       li.textContent = capitalize(school.name);
-      li.onclick = () => { $("q").value = capitalize(school.name); list.hidden = true; loadSchool(school.edrpou, null, true); };
+      li.onclick = () => { $("q").value = capitalize(school.name); $("clear").hidden = false; list.hidden = true; loadSchool(school.edrpou, null, true); };
       list.appendChild(li);
     }
     list.hidden = false;

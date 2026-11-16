@@ -221,6 +221,11 @@ class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=os.path.join(ROOT, "web"), **kwargs)
 
+    def end_headers(self) -> None:
+        # Браузер завжди перевіряє, чи змінились файли сайту (інакше після правок видно стару версію)
+        self.send_header("Cache-Control", "no-cache")
+        super().end_headers()
+
     def send_json(self, payload, status: int = 200) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
