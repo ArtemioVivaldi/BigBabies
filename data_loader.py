@@ -102,12 +102,7 @@ def get_tenders(edrpou: str, use_cache: bool = True) -> dict:
                 return json.load(f)
         except Exception:
             pass
-            пошкоджений
-            кеш
-            ігноруємо
-            і
-            завантажуємо
-            наново
+            #пошкоджений кеш ігноруємо і завантажуємо наново
 
     # 2. Завантаження з мережі
     url = f"{BASE_URL}/tenders"
