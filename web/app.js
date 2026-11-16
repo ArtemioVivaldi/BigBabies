@@ -47,6 +47,13 @@ function clearSearch() {
   $("q").focus();
 }
 $("clear").addEventListener("click", clearSearch);
+// Приклади під полем: клік підставляє текст у поле й одразу запускає пошук
+document.querySelectorAll(".chip").forEach((chip) => chip.addEventListener("click", () => {
+  $("q").value = chip.dataset.q;
+  $("clear").hidden = false;
+  $("q").focus();
+  runSearch();
+}));
 $("q").addEventListener("keydown", (e) => { if (e.key === "Escape") clearSearch(); });
 document.addEventListener("click", (e) => { if (!e.target.closest(".search")) $("suggestions").hidden = true; });
 // Обидві кнопки «Знайти установу» переводять курсор у поле пошуку

@@ -173,3 +173,11 @@ h4 { font-size: 16px; font-weight: 600; margin: 24px 0 12px; }
   background: transparent; color: var(--muted); font-size: 26px; line-height: 1; cursor: pointer; transition: background-color .2s, color .2s; }
 .clear-btn:hover { background: var(--surface-2); color: var(--text); }
 .clear-btn[hidden] { display: none; }
+
+/* ---------- Текст у блоці пошуку ---------- */
+.lead { margin-top: 16px; font-size: clamp(16px, 1.5vw, 19px); color: var(--muted); max-width: 46rem; }
+.examples { margin-top: 18px; font-size: 14px; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.chip { font: inherit; font-size: 14px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+  padding: 6px 16px; cursor: pointer; transition: border-color .2s, background-color .2s; }
+.chip:hover { border-color: var(--accent); }
+.fine { margin-top: 18px; font-size: 13px; color: var(--muted); max-width: 46rem; }
