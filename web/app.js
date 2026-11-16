@@ -98,7 +98,7 @@ function render(data) {
     $("years").appendChild(b);
   }
 
-  for (const id of ["numbers-grid", "story-text", "chart-categories", "chart-months", "chart-heatmap", "top5-table"]) $(id).innerHTML = "";
+  for (const id of ["numbers-grid", "story-text", "chart-categories", "chart-months", "chart-heatmap", "top5-table", "compare-box", "sizes-box"]) $(id).innerHTML = "";
   if (s.facts) {
     $("numbers-grid").innerHTML =
       number("Витрачено за рік", money(s.total_amount), "завершені закупівлі") +
@@ -109,6 +109,8 @@ function render(data) {
     $("chart-months").innerHTML = lineChart(s.by_month, s.facts.busiest_month.month);
     $("chart-heatmap").innerHTML = heatmap(data.heatmap);
     $("top5-table").innerHTML = topTable(s.top_purchases);
+    $("compare-box").innerHTML = compareBlock(data.analytics, s);
+    $("sizes-box").innerHTML = sizesBlock(data.analytics);
   }
   armReveal();
 }
@@ -184,6 +186,88 @@ function topTable(purchases) {
   const rows = purchases.map((p) => `<tr><td>${esc(p.title)}</td><td>${esc(p.category)}</td><td>${p.date}</td>` +
     `<td class="amount">${money(p.amount)}</td><td><a href="https://prozorro.gov.ua/tender/${p.tender_id}" target="_blank" rel="noopener">відкрити</a></td></tr>`);
   return `<div class="table-wrap"><table><tr><th>Що купували</th><th>Категорія</th><th>Дата</th><th>Сума</th><th>Prozorro</th></tr>${rows.join("")}</table></div>`;
+}
+
+// ---------- Додаткова аналітика ----------
+
+const pct = (now, before) => before ? Math.round(((now - before) / before) * 100) : null;
+const signed = (p) => (p > 0 ? "+" : "") + p + "%";
+
+// Порівняння з минулим роком за ті самі місяці + крива накопичення
+function compareBlock(a, s) {
+  const c = a && a.comparison;
+  if (!c) return `<p class="muted reveal">За минулий рік немає завершених закупівель для порівняння.</p>`;
+  const period = c.through_month === 12 ? `${c.year} рік` : `${MONTHS[0]}–${MONTHS[c.through_month - 1]} ${c.year}`;
+  const delta = (label, now, before, fmt) => {
+    const p = pct(now, before);
+    return `<div class="num reveal"><div class="num-label">${label}</div><div class="num-value">${p === null ? "—" : signed(p)}</div>` +
+           `<div class="num-note">${fmt(now)} проти ${fmt(before)} (${period})</div></div>`;
+  };
+  const avg = (total, n) => (n ? total / n : 0);
+  const numbers = `<div class="numbers">` +
+    delta("Витрати", s.total_amount, c.total, money) +
+    delta("Кількість закупівель", s.tenders_count, c.count, (n) => n) +
+    delta("Середня закупівля", avg(s.total_amount, s.tenders_count), avg(c.total, c.count), money) + `</div>`;
+  return numbers + `<div class="grid compare-grid"><div class="reveal"><h4>По категоріях: цього року й ${c.year}</h4>${pairedBars(c)}</div>` +
+         `<div class="reveal"><h4>Скільки витрачено з початку року</h4>${cumulativeChart(a.cumulative, c.year, s.year)}</div></div>` +
+         `<p class="source reveal">Порівнюємо однакові місяці, щоб неповний рік не здавався меншим.</p>`;
+}
+
+function pairedBars(c) {
+  const rows = c.categories, W = 520, rowH = 54, left = 190, H = rows.length * rowH + 10;
+  const max = Math.max(...rows.map((r) => Math.max(r.amount, r.prev_amount))) || 1, bw = (v) => ((W - left - 20) * v) / max;
+  let svg = `<svg viewBox="0 0 ${W} ${H}">`;
+  rows.forEach((r, i) => {
+    const y = i * rowH + 4;
+    svg += `<text x="${left - 8}" y="${y + 24}" text-anchor="end" font-size="12">${esc(r.category)}</text>`;
+    svg += `<rect x="${left}" y="${y}" width="${bw(r.amount)}" height="18" rx="9" fill="#f2a122"><title>Цього року: ${money(r.amount)}</title></rect>`;
+    svg += `<rect x="${left}" y="${y + 22}" width="${bw(r.prev_amount)}" height="18" rx="9" fill="currentColor" fill-opacity=".3"><title>${c.year}: ${money(r.prev_amount)}</title></rect>`;
+  });
+  return svg + `</svg><p class="legend"><i style="background:#f2a122"></i> цього року <i style="background:currentColor;opacity:.3"></i> ${c.year}</p>`;
+}
+
+function cumulativeChart(cum, prevYear, year) {
+  const W = 520, H = 300, l = 52, r = 10, t = 20, b = 30;
+  const all = [...cum.current, ...(cum.previous || [])], max = Math.max(...all) * 1.08 || 1;
+  const x = (i) => l + ((W - l - r) * i) / 11, y = (v) => t + (H - t - b) * (1 - v / max);
+  const line = (vals, attrs) => `<polyline fill="none" stroke-width="2.5" stroke-linejoin="round" ${attrs} points="${vals.map((v, i) => x(i) + "," + y(v)).join(" ")}"/>`;
+  let svg = `<svg viewBox="0 0 ${W} ${H}">`;
+  for (let k = 0; k <= 4; k++) {
+    const v = (max * k) / 4;
+    svg += `<line x1="${l}" x2="${W - r}" y1="${y(v)}" y2="${y(v)}" stroke="currentColor" stroke-opacity=".12"/>` +
+           `<text x="${l - 6}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill-opacity=".7">${(v / 1e6).toFixed(0)} млн</text>`;
+  }
+  MONTHS.forEach((m, i) => { svg += `<text x="${x(i)}" y="${H - 10}" text-anchor="middle" font-size="11">${m}</text>`; });
+  if (cum.previous) svg += line(cum.previous, `stroke="currentColor" stroke-opacity=".35" stroke-dasharray="5 5"`);
+  svg += line(cum.current, `stroke="#f2a122"`);
+  const last = cum.current.length - 1;
+  svg += `<circle cx="${x(last)}" cy="${y(cum.current[last])}" r="4" fill="#f2a122"/>`;
+  return svg + `</svg><p class="legend"><i style="background:#f2a122"></i> ${year} <i style="background:currentColor;opacity:.35"></i> ${prevYear}</p>`;
+}
+
+// Дрібні й великі: частка кількості закупівель проти частки грошей
+function sizesBlock(a) {
+  if (!a) return "";
+  const totalCount = a.sizes.reduce((n, g) => n + g.count, 0) || 1, totalAmount = a.sizes.reduce((n, g) => n + g.amount, 0) || 1;
+  const opacities = [0.25, 0.5, 0.75, 1], W = 1000, H = 150;
+  const stacked = (key, total, y, title) => {
+    let x = 0, out = `<text x="0" y="${y - 10}" font-size="15" font-weight="600">${title}</text>`;
+    a.sizes.forEach((g, i) => {
+      const w = (W * g[key]) / total;
+      if (!w) return;
+      out += `<rect x="${x}" y="${y}" width="${Math.max(w - 3, 1)}" height="44" rx="10" fill="#f2a122" fill-opacity="${opacities[i]}"><title>${g.label}: ${g.count} закупівель, ${money(g.amount)}</title></rect>`;
+      if (w > 60) out += `<text x="${x + w / 2}" y="${y + 27}" text-anchor="middle" font-size="14" font-weight="600" ${i < 2 ? "" : 'style="fill:#1b1200"'}>${Math.round((g[key] / total) * 100)}%</text>`;
+      x += w;
+    });
+    return out;
+  };
+  const legend = a.sizes.map((g, i) => `<span><i style="background:#f2a122;opacity:${opacities[i]}"></i> ${g.label} <b>(${g.count})</b></span>`).join("");
+  const done = a.statuses.map((s) => `<span class="pill">${s.status}: ${s.count}</span>`).join("");
+  return `<svg class="reveal" viewBox="0 0 ${W} ${H}">${stacked("count", totalCount, 28, "Скільки покупок")}${stacked("amount", totalAmount, 108, "Скільки грошей")}</svg>` +
+    `<p class="legend legend-wrap reveal">${legend}</p>` +
+    `<p class="insight reveal">П'ять найбільших закупівель — це <b>${Math.round(a.top5_share * 100)}%</b> усіх грошей року. ` +
+    `Типова (медіанна) закупівля коштує <b>${money(a.median)}</b>.</p>` +
+    `<p class="muted reveal">Чим закінчились закупівлі цього року: ${done}</p>`;
 }
 
 // ---------- Світла / темна тема ----------
