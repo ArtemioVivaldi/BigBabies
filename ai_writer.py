@@ -84,8 +84,14 @@ def _ask_llm(prompt: str) -> str:
     r = requests.post(
         url,
         params={"key": LLM_API_KEY},
-        json={"contents": [{"parts": [{"text": prompt}]}]},
-        timeout=30,
+        json={
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {
+                "maxOutputTokens": 1024,
+                "thinkingConfig": {"thinkingBudget": 0},  # вимикає «роздуми» у flash-моделях
+            },
+        },
+        timeout=60,
     )
     r.raise_for_status()
     return r.json()["candidates"][0]["content"]["parts"][0]["text"]
