@@ -1,0 +1,7 @@
+# Тема застосунку: палітра зі стилю Clarity (кремовий, майже чорний, зелено-жовтий)
+[theme]
+base = "light"
+primaryColor = "#2F752C"
+backgroundColor = "#F5E2C5"
+secondaryBackgroundColor = "#DDD7A3"
+textColor = "#050505"
