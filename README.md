@@ -101,7 +101,6 @@ LLM_MODEL=gemini-3.5-flash-lite
 | `web/` | сайт: `index.html`, `style.css`, `app.js` (звичайний JavaScript, графіки на чистому SVG) |
 | `data/` | кеші закупівель установ, кеш історій (`stories/`), приклади (`samples/`) |
 | `CONTRACTS.md`, `PROJECT.md`, `tasks/` | договір між модулями й інструкції команди |
-| `app.py` | попередній прототип на Streamlit; основна версія тепер `api.py` + `web/` |
 
 Модулі `data_loader.py`, `analysis.py` та `ai_writer.py` можна запускати окремо (`python analysis.py`), щоб перевірити їхню частину.
 
