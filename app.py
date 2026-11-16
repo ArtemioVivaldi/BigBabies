@@ -123,15 +123,29 @@ def show_charts(summary: dict) -> None:
         months["Місяць"] = [MONTHS[m - 1] for m in months["month"]]
         # st.line_chart сортує підписи за алфавітом, тому малюємо через vega-lite
         # і прямо кажемо: сортувати за номером місяця
+        peak = summary["facts"]["busiest_month"]["month"]  # місяць з найбільшою сумою
+        x_month = {"field": "Місяць", "type": "ordinal", "title": "Місяць",
+                   "sort": MONTHS, "scale": {"domain": MONTHS}, "axis": {"labelAngle": 0}}
         st.vega_lite_chart(months, {
             "height": 280,
-            "mark": {"type": "line", "color": ACCENT, "point": True, "interpolate": "linear"},
-            "encoding": {
-                "x": {"field": "Місяць", "type": "ordinal", "title": "Місяць",
-                      "sort": {"field": "month"}, "axis": {"labelAngle": 0}},
-                "y": {"field": "amount", "type": "quantitative", "title": "Сума, грн",
-                      "scale": {"domainMin": 0}},
-            },
+            "layer": [
+                # 1) світла смуга на місяці-піку (як «optimization range» у макеті)
+                {"transform": [{"filter": f"datum.month == {peak}"}],
+                 "mark": {"type": "bar", "color": "#C0B623", "opacity": 0.35},
+                 "encoding": {"x": x_month, "y": {"value": 0}, "y2": {"value": "height"}}},
+                # 2) сама лінія з точками
+                {"mark": {"type": "line", "color": ACCENT, "point": {"color": ACCENT},
+                          "interpolate": "linear"},
+                 "encoding": {"x": x_month,
+                              "y": {"field": "amount", "type": "quantitative", "title": "Сума, грн",
+                                    "scale": {"domainMin": 0}}}},
+                # 3) підпис суми над піком
+                {"transform": [{"filter": f"datum.month == {peak}"}],
+                 "mark": {"type": "text", "dy": -12, "fontWeight": "bold", "color": INK},
+                 "encoding": {"x": x_month,
+                              "y": {"field": "amount", "type": "quantitative"},
+                              "text": {"field": "amount", "type": "quantitative", "format": ",.0f"}}},
+            ],
         })
         source_note("сума закупівель за місяцями")
 
