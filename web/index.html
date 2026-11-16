@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Куди пішли гроші вашої установи</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <span class="pill light">Відкриті дані Prozorro</span>
+      <h1>Куди пішли гроші<br>вашої установи</h1>
+      <p>Підсумки року для бюджету будь-якої установи — простою мовою, з графіками й історією від штучного інтелекту.</p>
+    </section>
+
+    <!-- Пошук з підказками -->
+    <section class="search">
+      <label for="q">Назва установи: школа, садочок, лікарня, міська рада…</label>
+      <input id="q" type="text" autocomplete="off" placeholder="Почніть вводити назву, наприклад «школа радості»">
+      <ul id="suggestions" hidden></ul>
+    </section>
+
+    <div id="message" class="message">Введіть хоча б 3 літери назви й оберіть установу зі списку.</div>
+
+    <!-- Результат (з'являється після вибору установи) -->
+    <div id="result" hidden>
+      <div class="header-row">
+        <h2 id="school-name"></h2>
+        <div id="years"></div>
+      </div>
+      <div id="pills"></div>
+
+      <section class="numbers" id="numbers"></section>
+      <section class="story" id="story"></section>
+
+      <section class="grid">
+        <div><h3>На що пішли гроші</h3><div id="chart-categories"></div></div>
+        <div><h3>Скільки по місяцях</h3><div id="chart-months"></div></div>
+      </section>
+
+      <section><h3>Коли і на що йшли гроші</h3><div id="chart-heatmap"></div>
+        <p class="source">Чим темніший квадрат, тим більше грошей.</p></section>
+
+      <section><h3>Топ-5 найбільших покупок</h3><div id="top5"></div></section>
+    </div>
+
+    <footer>
+      <p>Джерело: <a href="https://prozorro.gov.ua">Prozorro</a>. Суми — очікувана вартість завершених закупівель;
+      фактичні суми договорів можуть дещо відрізнятися.</p>
+      <div class="wordmark">Гроші моєї громади</div>
+    </footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
