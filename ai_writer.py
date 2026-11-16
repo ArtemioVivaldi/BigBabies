@@ -81,17 +81,17 @@ def _ask_llm(prompt: str) -> str:
     # За замовчуванням — Gemini
     url = ("https://generativelanguage.googleapis.com/v1beta/models/"
            f"{LLM_MODEL}:generateContent")
-    
+
+    config = {"maxOutputTokens": 2048}
+    if "2.5" in LLM_MODEL:
+        # Лише моделі 2.5 приймають thinkingBudget (0 вимикає «роздуми»).
+        # Нові моделі 3.x відповідають на цей параметр помилкою 400, тому їм його не шлемо.
+        config["thinkingConfig"] = {"thinkingBudget": 0}
+
     r = requests.post(
         url,
         params={"key": LLM_API_KEY},
-        json={
-            "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {
-                "maxOutputTokens": 2048,
-                "thinkingConfig": {"thinkingBudget": 0},  # вимикає «роздуми» у flash-моделях
-            },
-        },
+        json={"contents": [{"parts": [{"text": prompt}]}], "generationConfig": config},
         timeout=30,
     )
 
