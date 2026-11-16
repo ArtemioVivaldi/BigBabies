@@ -173,6 +173,7 @@ st.markdown(
         text-align: center; margin-bottom: 1.5rem;}
     .hero-title {font-size: 3rem; line-height: 1.1; margin: 1rem 0 0.8rem 0;}
     .hero-text {color: #DDD7A3; font-size: 1.05rem; max-width: 42rem; margin: 0 auto;}
+    .pill.dark {border-color: #050505; color: #050505;}
     .pill {display: inline-block; border: 1px solid #DDD7A3; color: #DDD7A3; border-radius: 999px;
         padding: 0.15rem 0.8rem; font-size: 0.8rem;}
     </style>""",
@@ -226,8 +227,11 @@ year = st.selectbox("Рік", years)
 # 3. Підсумки
 summary = build_summary(data, year)
 school = summary["school"]
-st.header(f"{school['name'].capitalize()} · {year}")
-st.caption(school["city"])
+st.header(school["name"].capitalize())
+st.markdown(  # пілюлі-мітки: місто і рік (без відступів у HTML!)
+    f'<span class="pill dark">{school["city"]}</span> <span class="pill dark">{year} рік</span>',
+    unsafe_allow_html=True,
+)
 
 if summary["facts"] is None:
     st.info(f"За {year} рік немає завершених закупівель. Спробуйте інший рік.")
