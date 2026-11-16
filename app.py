@@ -1,16 +1,24 @@
 """Частина 4 — інтерфейс Streamlit «Гроші моєї школи».
 
 Запуск: streamlit run app.py
-Поки інші модулі не готові, дані беруться з приклада в data/samples/.
+Дані: data_loader -> analysis -> ai_writer (див. CONTRACTS.md).
 """
-import json
+import os
 from pathlib import Path
 
 import pandas as pd  # ставиться разом зі streamlit
 import streamlit as st
 
-# Папка з прикладами
-SAMPLES = Path(__file__).parent / "data" / "samples"
+from analysis import available_years, build_summary
+from data_loader import get_tenders, search_schools
+
+try:
+    from ai_writer import write_story  # історія від ШІ (коли буде готова)
+except ImportError:
+    from ai_writer import template_story as write_story  # запасний варіант за шаблоном
+
+# data_loader шукає кеш у папці data/ відносно поточної папки — тому стаємо в корінь проєкту
+os.chdir(Path(__file__).parent)
 
 # Кольори (палітра теми лежить у .streamlit/config.toml)
 ACCENT = "#F4A97A"
@@ -19,21 +27,24 @@ CATEGORY_COLORS = ["#F4A97A", "#B7C9CC", "#5FB3A6", "#E8C468", "#E07A7A", "#9A8F
 MONTHS = ["січ", "лют", "бер", "кві", "тра", "чер", "лип", "сер", "вер", "жов", "лис", "гру"]
 
 
-# ---------- Два «перемикачі»: звідки беремо дані ----------
+# ---------- Дані (з кешем, щоб не повторювати запити при кожному кліку) ----------
 
-def load_summary() -> dict:
-    """Підсумки року. Зараз — приклад із файлу."""
-    # Після інтеграції замінити на:
-    # return build_summary(get_tenders(edrpou), year)
-    with open(SAMPLES / "summary_2025.json", encoding="utf-8") as f:
-        return json.load(f)
+@st.cache_data(show_spinner=False)
+def cached_search(query: str) -> list[dict]:
+    """Пошук установ за назвою."""
+    return search_schools(query)
 
 
-def load_story(summary: dict) -> str:
-    """Історія від ШІ. Зараз — приклад із файлу."""
-    # Після інтеграції замінити на:
-    # return write_story(summary)
-    return (SAMPLES / "story_2025.md").read_text(encoding="utf-8")
+@st.cache_data(show_spinner=False)
+def cached_tenders(edrpou: str) -> dict:
+    """Усі закупівлі установи (з файлового кешу або з Prozorro)."""
+    return get_tenders(edrpou)
+
+
+@st.cache_data(show_spinner=False)
+def cached_story(summary: dict) -> str:
+    """Історія для підсумків року."""
+    return write_story(summary)
 
 
 # ---------- Допоміжні функції відображення ----------
@@ -149,18 +160,49 @@ st.set_page_config(page_title="Гроші моєї школи", page_icon="🎒"
 st.title("🎒 Гроші моєї школи")
 st.write("Підсумки року для бюджету школи — простою мовою, на відкритих даних Prozorro.")
 
-# Пошук (поки заглушка — працюватиме після інтеграції)
-st.text_input("Назва школи", value="школа радості", disabled=True)
+# 1. Пошук установи
+query = st.text_input("Назва школи, садочка чи лікарні", value="школа радості")
+if len(query.strip()) < 3:
+    st.info("Введіть хоча б 3 літери назви.")
+    st.stop()
 
-summary = load_summary()
+with st.spinner("Шукаємо установу…"):
+    schools = cached_search(query.strip())
+if not schools:
+    st.warning("Нічого не знайдено. Перевірте назву або інтернет-з'єднання і спробуйте ще раз.")
+    st.stop()
+
+# 2. Вибір установи і року
+col_school, col_year = st.columns([3, 1])
+chosen = col_school.selectbox("Оберіть установу", schools, format_func=lambda s: s["name"].capitalize())
+
+try:
+    with st.spinner("Завантажуємо закупівлі з Prozorro…"):
+        data = cached_tenders(chosen["edrpou"])
+except ConnectionError as error:
+    st.error(str(error))
+    st.stop()
+
+years = available_years(data["tenders"])
+if not years:
+    st.warning("У цієї установи немає закупівель у Prozorro.")
+    st.stop()
+year = col_year.selectbox("Рік", years)
+
+# 3. Підсумки
+summary = build_summary(data, year)
 school = summary["school"]
-st.header(f"{school['name'].capitalize()} · {summary['year']}")
+st.header(f"{school['name'].capitalize()} · {year}")
 st.caption(school["city"])
+
+if summary["facts"] is None:
+    st.info(f"За {year} рік немає завершених закупівель. Спробуйте інший рік.")
+    st.stop()
 
 show_metrics(summary)
 
 st.divider()
-st.markdown(load_story(summary))
+st.markdown(cached_story(summary))
 
 st.divider()
 show_charts(summary)
