@@ -141,6 +141,7 @@ const number = (label, value, note) =>
 // Підпис під історією: хто її написав
 function storySource(source) {
   if (source === "ai") return '<p class="story-source">✦ Історію написав штучний інтелект на основі цифр Prozorro. Усі суми пораховані програмою.</p>';
+  if (source === "nokey") return '<p class="story-source warn">Це шаблонна історія: штучний інтелект не налаштовано. Додайте ключ у файл .env (див. README) або запустіть сайт із готовим посередником.</p>';
   if (source === "template") return '<p class="story-source warn">Історію зібрано за шаблоном: штучний інтелект зараз недоступний.</p>';
   return "";
 }

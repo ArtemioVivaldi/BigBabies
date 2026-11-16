@@ -180,7 +180,7 @@ def is_complete(story: str) -> bool:
 
 
 def get_story(edrpou: str, year: int, summary: dict) -> tuple[str, str]:
-    """Історія для установи й року: (текст, джерело). Джерело: «ai», «template» або «none».
+    """Історія для установи й року: (текст, джерело). Джерело: «ai», «template» (ШІ не відповів), «nokey» (ШІ не налаштовано) або «none».
 
     Вдалу історію від ШІ зберігаємо у data/stories/<ЄДРПОУ>_<рік>.md і далі читаємо з файлу:
     демо стає швидким і не залежить від того, чи відповість ШІ саме зараз.
@@ -194,8 +194,8 @@ def get_story(edrpou: str, year: int, summary: dict) -> tuple[str, str]:
             cached = f.read()
         if is_complete(cached):
             return cached, "ai"
-    if not ai_writer.LLM_API_KEY:
-        return template_story(summary), "template"  # немає ключа в .env — ШІ не викликаємо
+    if not ai_writer.ai_available():
+        return template_story(summary), "nokey"  # немає ні ключа в .env, ні посередника — ШІ не викликаємо
     # Google часто відповідає 503 («висока навантаженість») приблизно на кожен другий запит,
     # а модель іноді обриває текст. write_story при помилці тихо повертає шаблон, тому
     # тут пробуємо кілька разів із короткою паузою, і лише потім погоджуємось на шаблон.

@@ -1,0 +1,8 @@
+# Налаштування Cloudflare Worker (безкоштовний тариф достатній)
+name = "bigbabies-ai"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# Ключ НЕ пишемо сюди. Його додають секретом: npx wrangler secret put GEMINI_API_KEY
+[vars]
+GEMINI_MODEL = "gemini-3.5-flash-lite"

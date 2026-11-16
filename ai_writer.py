@@ -10,6 +10,17 @@ LLM_PROVIDER = os.getenv("LLM_PROVIDER", "gemini")
 LLM_API_KEY = os.getenv("LLM_API_KEY", "")
 LLM_MODEL = os.getenv("LLM_MODEL", "")
 
+# Посередник (папка proxy/): маленький сервер, на якому лежить ключ ШІ. Завдяки йому сайт одразу працює
+# в кожного, хто завантажив проєкт з git, а ключ у репозиторій не потрапляє. Адреса не секретна.
+# Після розгортання proxy/worker.js вставте її сюди (або задайте LLM_PROXY_URL у .env).
+DEFAULT_PROXY_URL = ""
+LLM_PROXY_URL = os.getenv("LLM_PROXY_URL", DEFAULT_PROXY_URL)
+
+
+def ai_available() -> bool:
+    """Чи є чим звертатись до ШІ: власний ключ у .env або посередник."""
+    return bool(LLM_API_KEY or LLM_PROXY_URL)
+
 MONTHS = ["січень", "лютий", "березень", "квітень", "травень", "червень",
           "липень", "серпень", "вересень", "жовтень", "листопад", "грудень"]
 
@@ -65,7 +76,12 @@ def _ask_llm(prompt: str) -> str:
     Її ловить write_story і підставляє шаблонну історію.
     """
     if not LLM_API_KEY:
-        raise ValueError("Немає LLM_API_KEY у .env")
+        if not LLM_PROXY_URL:
+            raise ValueError("Немає LLM_API_KEY у .env і не задано посередника")
+        # Власного ключа немає — просимо посередника, який тримає ключ на сервері
+        r = requests.post(LLM_PROXY_URL, json={"prompt": prompt}, timeout=40)
+        r.raise_for_status()
+        return r.json()["text"]
 
     if LLM_PROVIDER == "groq":
         r = requests.post(
