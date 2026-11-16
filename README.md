@@ -131,5 +131,5 @@ LLM_MODEL=gemini-3.5-flash-lite
 |---|---|
 | … | Дані (`data_loader.py`) |
 | … | Аналітика (`analysis.py`) |
-| … | ШІ (`ai_writer.py`) |
+| Андрій | ШІ (`ai_writer.py`) |
 | … | Інтерфейс (`api.py`, `web/`) |
