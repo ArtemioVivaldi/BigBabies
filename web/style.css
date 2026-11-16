@@ -56,7 +56,7 @@ a { color: var(--green); }
 
 footer p { color: var(--sand); font-size: 0.85rem; max-width: 46rem; }
 footer a { color: var(--yellow); }
-.wordmark { font-size: clamp(2.5rem, 10vw, 7.5rem); line-height: 1; white-space: nowrap; margin-top: 1.5rem; }
+.wordmark { font-size: clamp(2rem, 8.2vw, 6.5rem); line-height: 1; white-space: nowrap; margin-top: 1.5rem; }
 
 /* ---------- Поверхи: картки, що накладаються під час прокрутки ---------- */
 .floor { position: sticky; top: 16px; background: var(--cream); border-radius: 28px; padding: 2.5rem;
@@ -92,3 +92,22 @@ svg text { fill: currentColor; }
 .anim .cell { opacity: 0; transform: scale(.4); transform-box: fill-box; transform-origin: center;
   transition: opacity .5s ease, transform .5s cubic-bezier(.2, .8, .2, 1); transition-delay: var(--d, 0ms); }
 .anim .floor.in .cell { opacity: 1; transform: none; }
+
+/* ---------- Анімований градієнтний фон hero (у дусі макета Clarity) ---------- */
+.hero { position: relative; overflow: hidden; isolation: isolate; }
+.hero > * { position: relative; z-index: 1; }
+.hero::before, .hero::after { content: ""; position: absolute; z-index: 0; border-radius: 50%; filter: blur(60px); opacity: .55; }
+.hero::before { width: 60%; aspect-ratio: 1; left: -10%; top: -40%;
+  background: radial-gradient(circle, #C0B623 0%, #619206 55%, transparent 70%); animation: drift-a 14s ease-in-out infinite alternate; }
+.hero::after { width: 55%; aspect-ratio: 1; right: -12%; bottom: -50%;
+  background: radial-gradient(circle, #26728A 0%, #2F752C 50%, transparent 70%); animation: drift-b 17s ease-in-out infinite alternate; }
+@keyframes drift-a { to { transform: translate(35%, 25%) scale(1.25); } }
+@keyframes drift-b { to { transform: translate(-30%, -20%) scale(1.15); } }
+.hero > * { animation: hero-in 1s cubic-bezier(.2, .8, .2, 1) both; }
+.hero > :nth-child(2) { animation-delay: .15s; } .hero > :nth-child(3) { animation-delay: .3s; }
+@keyframes hero-in { from { opacity: 0; transform: translateY(24px); } }
+@media (prefers-reduced-motion: reduce) { .hero::before, .hero::after, .hero > * { animation: none; } }
+
+/* список підказок вирівняний по полю вводу (відступ = padding поверху) */
+#suggestions { left: 2.5rem; right: 2.5rem; }
+@media (max-width: 700px) { #suggestions { left: 1.5rem; right: 1.5rem; } }
