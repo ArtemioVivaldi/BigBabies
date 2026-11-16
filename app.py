@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pandas as pd  # ставиться разом зі streamlit
 import streamlit as st
+from streamlit_searchbox import st_searchbox  # поле з підказками під час введення
 
 from analysis import available_years, build_summary
 from data_loader import get_tenders, search_schools
@@ -160,25 +161,29 @@ st.set_page_config(page_title="Гроші моєї школи", page_icon="🎒"
 st.title("🎒 Гроші моєї школи")
 st.write("Підсумки року для бюджету школи — простою мовою, на відкритих даних Prozorro.")
 
-# 1. Пошук установи
-query = st.text_input("Назва школи, садочка чи лікарні", value="школа радості")
-if len(query.strip()) < 3:
-    st.info("Введіть хоча б 3 літери назви.")
+# 1. Пошук установи: починаємо вводити назву — і список підказок оновлюється одразу
+def suggest_schools(text: str) -> list[tuple[str, str]]:
+    """Підказки для поля пошуку: пари (назва для показу, ЄДРПОУ)."""
+    if len(text.strip()) < 3:
+        return []
+    return [(school["name"].capitalize(), school["edrpou"])
+            for school in cached_search(text.strip())]
+
+
+edrpou = st_searchbox(
+    suggest_schools,
+    label="Назва школи, садочка чи лікарні",
+    placeholder="Почніть вводити назву, наприклад «школа радості»",
+    key="school_search",
+)
+if not edrpou:
+    st.info("Введіть хоча б 3 літери назви й оберіть установу зі списку.")
     st.stop()
 
-with st.spinner("Шукаємо установу…"):
-    schools = cached_search(query.strip())
-if not schools:
-    st.warning("Нічого не знайдено. Перевірте назву або інтернет-з'єднання і спробуйте ще раз.")
-    st.stop()
-
-# 2. Вибір установи і року
-col_school, col_year = st.columns([3, 1])
-chosen = col_school.selectbox("Оберіть установу", schools, format_func=lambda s: s["name"].capitalize())
-
+# 2. Завантаження закупівль і вибір року
 try:
     with st.spinner("Завантажуємо закупівлі з Prozorro…"):
-        data = cached_tenders(chosen["edrpou"])
+        data = cached_tenders(edrpou)
 except ConnectionError as error:
     st.error(str(error))
     st.stop()
@@ -187,7 +192,7 @@ years = available_years(data["tenders"])
 if not years:
     st.warning("У цієї установи немає закупівель у Prozorro.")
     st.stop()
-year = col_year.selectbox("Рік", years)
+year = st.selectbox("Рік", years)
 
 # 3. Підсумки
 summary = build_summary(data, year)
