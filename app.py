@@ -22,8 +22,10 @@ except ImportError:
 os.chdir(Path(__file__).parent)
 
 # Кольори (палітра теми лежить у .streamlit/config.toml)
-ACCENT = "#F4A97A"
-CATEGORY_COLORS = ["#F4A97A", "#B7C9CC", "#5FB3A6", "#E8C468", "#E07A7A", "#9A8FC9", "#7FA6D6"]
+CREAM = "#F5E2C5"
+INK = "#050505"
+ACCENT = "#2F752C"  # зелений
+CATEGORY_COLORS = ["#2F752C", "#C0B623", "#26728A", "#619206", "#050505", "#8A7B3C", "#B58A3C"]
 
 MONTHS = ["січ", "лют", "бер", "кві", "тра", "чер", "лип", "сер", "вер", "жов", "лис", "гру"]
 
@@ -67,7 +69,7 @@ def show_metrics(summary: dict) -> None:
     """Три великі цифри у стилі «Bonn in drei Zahlen»."""
     st.markdown(
         """<style>
-        .big-number {border-top: 2px solid #F4A97A; padding-top: 0.6rem;}
+        .big-number {border-top: 2px solid #050505; padding-top: 0.6rem;}
         .bn-label {font-size: 0.85rem; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.05em;}
         .bn-value {font-size: 2.6rem; font-weight: 800; line-height: 1.15;}
         .bn-note {font-size: 0.9rem; opacity: 0.7;}

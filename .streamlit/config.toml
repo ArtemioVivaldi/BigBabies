@@ -1,7 +1,7 @@
-# Тема застосунку: темна, з одним теплим акцентом
+# Тема застосунку: палітра зі стилю Clarity (кремовий, майже чорний, зелено-жовтий)
 [theme]
-base = "dark"
-primaryColor = "#F4A97A"
-backgroundColor = "#1B2B33"
-secondaryBackgroundColor = "#243840"
-textColor = "#F5EFE6"
+base = "light"
+primaryColor = "#2F752C"
+backgroundColor = "#F5E2C5"
+secondaryBackgroundColor = "#DDD7A3"
+textColor = "#050505"
